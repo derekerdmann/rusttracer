@@ -3,4 +3,10 @@ name = "rusttracer"
 version = "0.1.0"
 authors = ["Derek Erdmann <derek@derekerdmann.com>"]
 
+[[bin]]
+name = "rusttracer"
+
 [dependencies]
+piston = "0.32.0"
+piston_window = "0.66.0"
+image = "0.13.0"
