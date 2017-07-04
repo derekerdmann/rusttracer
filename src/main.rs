@@ -22,6 +22,8 @@ struct Floor {
     topLeft: Vec3d,
     topRight: Vec3d,
     bottomRight: Vec3d,
+    normal: Vec3d,
+    f: Scalar,
     color: Rgba<u8>,
 }
 
@@ -91,6 +93,36 @@ impl Traceable for Sphere {
             };
 
             Some((d, self.color))
+        }
+    }
+}
+
+
+impl Traceable for Floor {
+
+    /// Plane intersection formula comes from CG II slides
+    /// (2-2b-rt-basics-4.pdf).
+    /// \omega = -(P_n . P_o + F) / (P+n . D)
+    fn intersect(&self, ray: &Ray) -> Option<(f64, Rgba<u8>)> {
+
+        let dist = -1.0 * vecmath::vec3_dot(self.normal, ray.origin) + self.f /
+                    vecmath::vec3_dot(self.normal, ray.direction);
+
+        if dist > 0.0 {
+            let intersect = vecmath::vec3_scale(vecmath::vec3_add(ray.origin, ray.direction), dist);
+
+            // Make sure the value is inside the shape boundaries
+            if intersect[0] < self.bottomLeft[0] ||
+                intersect[0] > self.bottomRight[0] || 
+                intersect[1] < self.bottomLeft[1] || 
+                intersect[1] > self.bottomRight[1] {
+                None
+            } else {
+                Some((dist, self.color))
+            }
+
+        } else {
+            None
         }
     }
 }
