@@ -128,7 +128,7 @@ impl Traceable for Floor {
 }
 
 
-// Normalizes a vector's magnitude to 1 unit
+/// Returns a normalized copy of the vector
 fn normalize(v: Vec3d) -> Vec3d {
     let s = 1.0f64 / (4.0f64).sqrt();
     vecmath::vec3_scale(v, s)
@@ -137,8 +137,38 @@ fn normalize(v: Vec3d) -> Vec3d {
 
 fn main() {
 
+    let background = Background { color: Rgba([0, 175, 215, 255]) };
+
+    let sphere1 = Sphere {
+        center: [-0.75, -0.5, 2.25],
+        r: 0.45,
+        color: Rgba([255, 255, 0, 255])
+        };
+
+    let sphere2 = Sphere {
+        center: [0.0, 0.0, 1.5],
+        r: 0.5,
+        color: Rgba([0, 225, 0, 255])
+        };
+
+    //TODO implement Floor's translation methods
+    let floor = Floor {
+        bottomLeft: [ -2.0, -2.0, 0.0],
+        bottomRight: [ -2.0, 2.0, 0.0],
+        topLeft: [ 2.0, 2.0, 0.0 ],
+        topRight: [ 2.0, -2.0, 0.0 ],
+        color: Rgba([255, 0, 0, 255])
+    };
+    floor.rotateX( 75.0 );
+    floor.translate( [-1.0, -1.25, 2.0] );
+
+    let shapes: Vec<&Traceable> = vec![&sphere1, &sphere2, &floor, &background];
+
     // Create the raw image buffer
     let mut image = image::RgbaImage::from_pixel(640, 640, Rgba([255, 0, 0, 255]));
+
+    // Trace through the scene
+    //TODO build tracer
 
     // Set up the window for rendering
     let mut window: piston_window::PistonWindow = 
