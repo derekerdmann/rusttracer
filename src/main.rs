@@ -5,6 +5,9 @@ extern crate vecmath;
 
 use image::{ Rgb, ConvertBuffer };
 use graphics::math::{ Vec3d, Scalar };
+use vecmath::{ vec3_add, vec3_dot, vec3_scale, vec3_sub, vec3_normalized };
+
+const IMAGE_PLANE: Scalar = 0.5;
 
 // Objects that can be placed in a scene
 struct Background {
@@ -18,10 +21,10 @@ struct Sphere {
 }
 
 struct Floor {
-    bottomLeft: Vec3d,
-    topLeft: Vec3d,
-    topRight: Vec3d,
-    bottomRight: Vec3d,
+    bottom_left: Vec3d,
+    top_left: Vec3d,
+    top_right: Vec3d,
+    bottom_right: Vec3d,
     normal: Vec3d,
     f: Scalar,
     color: Rgb<u8>,
@@ -29,13 +32,22 @@ struct Floor {
 
 impl Floor {
 
-    fn new(bottomLeft: Vec3d, topLeft: Vec3d, topRight: Vec3d, bottomRight: Vec3d, color: Rgb<u8>) -> Floor {
+    fn new(bottom_left: Vec3d, top_left: Vec3d, top_right: Vec3d, bottom_right: Vec3d, color: Rgb<u8>) -> Floor {
 
-        let (normal, f) = Floor::calculatenormal(bottomLeft, topLeft, bottomRight);
+        // Given 3 of the corners, calculate the normal and F
+        let a = vec3_sub(bottom_left, top_left);
+        let b = vec3_sub(bottom_left, bottom_right);
+
+        let normal: Vec3d = vec3_normalized([
+            a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0]
+        ]);
 
         Floor {
-            bottomLeft, topLeft, topRight, bottomRight,
-            normal, f,
+            bottom_left, top_left, top_right, bottom_right,
+            normal,
+            f: -vec3_dot(normal, bottom_left),
             color
         }
     }
@@ -43,10 +55,10 @@ impl Floor {
     /// Translates the floor by the amount specified in the translation vector
     fn translate(&self, translation: Vec3d) -> Floor {
         Floor::new(
-            vecmath::vec3_add(self.bottomLeft, translation),   
-            vecmath::vec3_add(self.topLeft, translation),
-            vecmath::vec3_add(self.topRight, translation),
-            vecmath::vec3_add(self.bottomRight, translation),
+            vec3_add(self.bottom_left, translation),   
+            vec3_add(self.top_left, translation),
+            vec3_add(self.top_right, translation),
+            vec3_add(self.bottom_right, translation),
             self.color
         )
     }
@@ -55,8 +67,9 @@ impl Floor {
     fn rotate_x(&self, rotation: Scalar) -> Floor {
 
         /// Rotates a single vector
-        fn rotate_x(v: Vec3d) -> Vec3d {
-            let theta = std::f64::consts::PI / 180.0;
+        fn rotate_x(v: Vec3d, rotation: Scalar) -> Vec3d {
+
+            let theta = rotation * (std::f64::consts::PI / 180.0);
         
             [
                 v[0],
@@ -66,27 +79,12 @@ impl Floor {
         }
         
         Floor::new(
-            rotate_x(self.bottomLeft),
-            rotate_x(self.topLeft),
-            rotate_x(self.topRight),
-            rotate_x(self.bottomRight),
+            rotate_x(self.bottom_left, rotation),
+            rotate_x(self.top_left, rotation),
+            rotate_x(self.top_right, rotation),
+            rotate_x(self.bottom_right, rotation),
             self.color
         )
-    }
-
-    // Given 3 corners, calculates the normal and constant F
-    fn calculatenormal(c1: Vec3d, c2: Vec3d, c3: Vec3d) -> (Vec3d, Scalar) {
-
-        let a = vecmath::vec3_sub(c1, c2);
-        let b = vecmath::vec3_sub(c1, c3);
-
-        let normal: Vec3d = [
-            a[1] * b[2] - a[2] * b[1],
-            a[2] * b[0] - a[0] * b[2],
-            a[0] * b[1] - a[1] * b[0]
-        ];
-
-        (vecmath::vec3_normalized(normal), -vecmath::vec3_dot(normal, c1))
     }
 }
 
@@ -94,6 +92,12 @@ impl Floor {
 struct Ray {
     origin: Vec3d,
     direction: Vec3d,
+}
+
+impl Ray {
+    fn new(origin: Vec3d, direction: Vec3d) -> Ray {
+        Ray { origin: origin, direction: vec3_normalized(direction) }
+    }
 }
 
 
@@ -126,14 +130,14 @@ impl Traceable for Sphere {
         // B=2 * (dx(x_o −x_c)+dy(y_o −y_c)+dz(z_o −z_c)) 
         // which is just the dot product
         // B = 2 * (d . (origin - center))
-        let b = 2.0 * vecmath::vec3_dot(ray.direction, vecmath::vec3_sub(ray.origin, self.center));
+        let b = 2.0 * vec3_dot(ray.direction, vec3_sub(ray.origin, self.center));
 
         // C = (x_o −x_c)^2 +(y_o −y_c)^2 +(z_o −z_c)^2 − r^2
         // which also uses the dot product:
         // tmp = origin - center;
         // C = tmp . tmp - r^2
-        let c_sub = vecmath::vec3_sub(ray.origin, self.center);
-        let c = vecmath::vec3_dot(c_sub, c_sub) - (self.r * self.r);
+        let c_sub = vec3_sub(ray.origin, self.center);
+        let c = vec3_dot(c_sub, c_sub) - (self.r * self.r);
 
         // Partial quadratic solution
         let partial = b * b - 4.0 * c;
@@ -168,20 +172,20 @@ impl Traceable for Floor {
     /// \omega = -(P_n . P_o + F) / (P+n . D)
     fn intersect(&self, ray: &Ray) -> Option<(Scalar, Rgb<u8>)> {
 
-        let dist = -vecmath::vec3_dot(self.normal, ray.origin) + self.f /
-                    vecmath::vec3_dot(self.normal, ray.direction);
+        let dist = -(vec3_dot(self.normal, ray.origin) + self.f) /
+                    vec3_dot(self.normal, ray.direction);
 
         if dist > 0.0 {
-            let intersect = vecmath::vec3_scale(vecmath::vec3_add(ray.origin, ray.direction), dist);
+
+            let intersect = vec3_add(ray.origin, vec3_scale(ray.direction, dist));
 
             // Make sure the value is inside the shape boundaries
-            if intersect[0] < self.bottomLeft[0] ||
-                intersect[0] > self.bottomRight[0] || 
-                intersect[1] < self.bottomLeft[1] || 
-                intersect[1] > self.bottomRight[1] {
-                None
-            } else {
+            if intersect[0] >= self.bottom_left[0] && intersect[0] <= self.bottom_right[0] &&
+                intersect[1] >= self.bottom_left[1] && intersect[1] <= self.top_left[1] {
+
                 Some((dist, self.color))
+            } else {
+                None
             }
 
         } else {
@@ -217,13 +221,47 @@ fn main() {
     let floor = floor.rotate_x( 75.0 );
     let floor = floor.translate( [-1.0, -1.25, 2.0] );
 
-    let shapes: Vec<&Traceable> = vec![&sphere1, &sphere2, &floor, &background];
+    let shapes: Vec<&Traceable> = vec![&sphere1, &sphere2, &floor];
 
     // Create the raw image buffer
     let mut image = image::RgbImage::from_pixel(640, 640, Rgb([255, 0, 0]));
 
+    let height = image.height(); // TODO properly translate, instead of hack
+
+    let dx = 1.0 / image.width() as Scalar;
+    let dy = 1.0 / image.height() as Scalar;
+
     // Trace through the scene
-    //TODO build tracer
+    for (xpixel, ypixel, pixel) in image.enumerate_pixels_mut() {
+
+        let ypixel = height - ypixel; //TODO properly translate
+
+        if (xpixel == 0 && ypixel == 0) || (xpixel == 100 && ypixel == 100){
+            *pixel = Rgb([0, 0, 0]);
+            continue;
+        }
+
+        let x = -0.5 + (xpixel as Scalar) * dx;
+        let y = -0.5 + (ypixel as Scalar) * dy;
+
+        let r = Ray::new([0.0, 0.0, 0.0], [x, y, IMAGE_PLANE]);
+
+        // Calculate the color for the pixel
+        let bg = background.intersect(&r).expect("Background must always intersect!");
+        let (_, color) = shapes.iter().fold(bg, { |(best_dist, best_color), &shape|
+            match shape.intersect(&r) {
+                Some((dist, color)) => if dist < best_dist {
+                    (dist, color)
+                } else {
+                    (best_dist, best_color)
+                },
+                None => (best_dist, best_color)
+            }
+        });
+
+        // Update the pixel color
+        *pixel = color;
+    }
 
     // Set up the window for rendering
     let mut window: piston_window::PistonWindow = 
