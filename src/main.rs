@@ -236,11 +236,6 @@ fn main() {
 
         let ypixel = height - ypixel; //TODO properly translate
 
-        if (xpixel == 0 && ypixel == 0) || (xpixel == 100 && ypixel == 100){
-            *pixel = Rgb([0, 0, 0]);
-            continue;
-        }
-
         let x = -0.5 + (xpixel as Scalar) * dx;
         let y = -0.5 + (ypixel as Scalar) * dy;
 
