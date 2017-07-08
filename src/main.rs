@@ -250,12 +250,8 @@ fn main() {
         let bg = background.intersect(&r).expect("Background must always intersect!");
         let (_, color) = shapes.iter().fold(bg, { |(best_dist, best_color), &shape|
             match shape.intersect(&r) {
-                Some((dist, color)) => if dist < best_dist {
-                    (dist, color)
-                } else {
-                    (best_dist, best_color)
-                },
-                None => (best_dist, best_color)
+                Some((dist, color)) if dist < best_dist => (dist, color),
+                _ => (best_dist, best_color)
             }
         });
 
