@@ -27,6 +27,69 @@ struct Floor {
     color: Rgba<u8>,
 }
 
+impl Floor {
+
+    fn new(bottomLeft: Vec3d, topLeft: Vec3d, topRight: Vec3d, bottomRight: Vec3d, color: Rgba<u8>) -> Floor {
+
+        let (normal, f) = Floor::calculatenormal(bottomLeft, topLeft, bottomRight);
+
+        Floor {
+            bottomLeft, topLeft, topRight, bottomRight,
+            normal, f,
+            color
+        }
+    }
+
+    /// Translates the floor by the amount specified in the translation vector
+    fn translate(&self, translation: Vec3d) -> Floor {
+        Floor::new(
+            vecmath::vec3_add(self.bottomLeft, translation),   
+            vecmath::vec3_add(self.topLeft, translation),
+            vecmath::vec3_add(self.topRight, translation),
+            vecmath::vec3_add(self.bottomRight, translation),
+            self.color
+        )
+    }
+
+    /// Rotates the floor around the X axis by the provided rotation in degrees
+    fn rotate_x(&self, rotation: Scalar) -> Floor {
+
+        /// Rotates a single vector
+        fn rotate_x(v: Vec3d) -> Vec3d {
+            let theta = std::f64::consts::PI / 180.0;
+        
+            [
+                v[0],
+                v[1] * theta.cos() + v[2] * -theta.sin(),
+                v[1] * theta.sin() + v[2] * theta.cos()
+            ]
+        }
+        
+        Floor::new(
+            rotate_x(self.bottomLeft),
+            rotate_x(self.topLeft),
+            rotate_x(self.topRight),
+            rotate_x(self.bottomRight),
+            self.color
+        )
+    }
+
+    // Given 3 corners, calculates the normal and constant F
+    fn calculatenormal(c1: Vec3d, c2: Vec3d, c3: Vec3d) -> (Vec3d, Scalar) {
+
+        let a = vecmath::vec3_sub(c1, c2);
+        let b = vecmath::vec3_sub(c1, c3);
+
+        let normal: Vec3d = [
+            a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0]
+        ];
+
+        (vecmath::vec3_normalized(normal), -vecmath::vec3_dot(normal, c1))
+    }
+}
+
 // Individual ray that is fired through the scene
 struct Ray {
     origin: Vec3d,
@@ -39,12 +102,12 @@ trait Traceable {
 
     // If the Ray intersects the shape, returns the distance from the Ray's
     // origin and the color at that point.
-    fn intersect(&self, ray: &Ray) -> Option<(f64, Rgba<u8>)>;
+    fn intersect(&self, ray: &Ray) -> Option<(Scalar, Rgba<u8>)>;
 }
 
 // The background object always intersects and returns its static color
 impl Traceable for Background {
-    fn intersect(&self, _: &Ray) -> Option<(f64, Rgba<u8>)> {
+    fn intersect(&self, _: &Ray) -> Option<(Scalar, Rgba<u8>)> {
         Some((std::f64::INFINITY, self.color))
     }
 }
@@ -58,7 +121,7 @@ impl Traceable for Sphere {
     ///
     /// \omega = (-B \pm \sqrt{B^2 - 4 * C}) / 2
     ///
-    fn intersect(&self, ray: &Ray) -> Option<(f64, Rgba<u8>)> {
+    fn intersect(&self, ray: &Ray) -> Option<(Scalar, Rgba<u8>)> {
 
         // B=2 * (dx(x_o −x_c)+dy(y_o −y_c)+dz(z_o −z_c)) 
         // which is just the dot product
@@ -89,7 +152,7 @@ impl Traceable for Sphere {
             } else if d2 < 0.0 {
                 d1
             } else {
-                f64::min(d1,d2)
+                Scalar::min(d1,d2)
             };
 
             Some((d, self.color))
@@ -103,9 +166,9 @@ impl Traceable for Floor {
     /// Plane intersection formula comes from CG II slides
     /// (2-2b-rt-basics-4.pdf).
     /// \omega = -(P_n . P_o + F) / (P+n . D)
-    fn intersect(&self, ray: &Ray) -> Option<(f64, Rgba<u8>)> {
+    fn intersect(&self, ray: &Ray) -> Option<(Scalar, Rgba<u8>)> {
 
-        let dist = -1.0 * vecmath::vec3_dot(self.normal, ray.origin) + self.f /
+        let dist = -vecmath::vec3_dot(self.normal, ray.origin) + self.f /
                     vecmath::vec3_dot(self.normal, ray.direction);
 
         if dist > 0.0 {
@@ -128,13 +191,6 @@ impl Traceable for Floor {
 }
 
 
-/// Returns a normalized copy of the vector
-fn normalize(v: Vec3d) -> Vec3d {
-    let s = 1.0f64 / (4.0f64).sqrt();
-    vecmath::vec3_scale(v, s)
-}
-
-
 fn main() {
 
     let background = Background { color: Rgba([0, 175, 215, 255]) };
@@ -151,16 +207,15 @@ fn main() {
         color: Rgba([0, 225, 0, 255])
         };
 
-    //TODO implement Floor's translation methods
-    let floor = Floor {
-        bottomLeft: [ -2.0, -2.0, 0.0],
-        bottomRight: [ -2.0, 2.0, 0.0],
-        topLeft: [ 2.0, 2.0, 0.0 ],
-        topRight: [ 2.0, -2.0, 0.0 ],
-        color: Rgba([255, 0, 0, 255])
-    };
-    floor.rotateX( 75.0 );
-    floor.translate( [-1.0, -1.25, 2.0] );
+    let floor = Floor::new(
+        [ -2.0, -2.0, 0.0],
+        [ -2.0, 2.0, 0.0],
+        [ 2.0, 2.0, 0.0 ],
+        [ 2.0, -2.0, 0.0 ],
+        Rgba([255, 0, 0, 255])
+    );
+    let floor = floor.rotate_x( 75.0 );
+    let floor = floor.translate( [-1.0, -1.25, 2.0] );
 
     let shapes: Vec<&Traceable> = vec![&sphere1, &sphere2, &floor, &background];
 
