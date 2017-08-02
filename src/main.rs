@@ -4,7 +4,7 @@ extern crate graphics;
 extern crate cgmath;
 
 use image::{ Rgb, ConvertBuffer };
-use cgmath::{ Vector3, InnerSpace, dot };
+use cgmath::{ Vector3, InnerSpace, dot, vec3 };
 
 const IMAGE_PLANE: f64 = 0.5;
 
@@ -198,26 +198,26 @@ fn main() {
     let background = Background { color: Rgb([0, 175, 215]) };
 
     let sphere1 = Sphere {
-        center: Vector3::new(-0.75, -0.5, 2.25),
+        center: vec3(-0.75, -0.5, 2.25),
         r: 0.45,
         color: Rgb([255, 255, 0])
         };
 
     let sphere2 = Sphere {
-        center: Vector3::new(0.0, 0.0, 1.5),
+        center: vec3(0.0, 0.0, 1.5),
         r: 0.5,
         color: Rgb([0, 225, 0])
         };
 
     let floor = Floor::new(
-        Vector3::new(-2.0, -2.0, 0.0),
-        Vector3::new(-2.0, 2.0, 0.0),
-        Vector3::new(2.0, 2.0, 0.0),
-        Vector3::new(2.0, -2.0, 0.0),
+        vec3(-2.0, -2.0, 0.0),
+        vec3(-2.0, 2.0, 0.0),
+        vec3(2.0, 2.0, 0.0),
+        vec3(2.0, -2.0, 0.0),
         Rgb([255, 0, 0])
     );
-    let floor = floor.rotate_x( 75.0 );
-    let floor = floor.translate( Vector3::new(-1.0, -1.25, 2.0) );
+    let floor = floor.rotate_x(75.0);
+    let floor = floor.translate(vec3(-1.0, -1.25, 2.0));
 
     let shapes: Vec<&Traceable> = vec![&sphere1, &sphere2, &floor];
 
@@ -237,7 +237,7 @@ fn main() {
         let x = -0.5 + (xpixel as f64) * dx;
         let y = -0.5 + (ypixel as f64) * dy;
 
-        let r = Ray::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(x, y, IMAGE_PLANE));
+        let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(x, y, IMAGE_PLANE));
 
         // Calculate the color for the pixel
         let bg = background.intersect(&r).expect("Background must always intersect!");
