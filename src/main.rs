@@ -1,13 +1,12 @@
 extern crate piston_window;
 extern crate image;
 extern crate graphics;
-extern crate vecmath;
+extern crate cgmath;
 
 use image::{ Rgb, ConvertBuffer };
-use graphics::math::{ Vec3d, Scalar };
-use vecmath::{ vec3_add, vec3_dot, vec3_scale, vec3_sub, vec3_normalized };
+use cgmath::{ Vector3, InnerSpace, dot };
 
-const IMAGE_PLANE: Scalar = 0.5;
+const IMAGE_PLANE: f64 = 0.5;
 
 // Objects that can be placed in a scene
 struct Background {
@@ -15,67 +14,67 @@ struct Background {
 }
 
 struct Sphere {
-    center: Vec3d,
-    r: Scalar,
+    center: Vector3<f64>,
+    r: f64,
     color: Rgb<u8>,
 }
 
 struct Floor {
-    bottom_left: Vec3d,
-    top_left: Vec3d,
-    top_right: Vec3d,
-    bottom_right: Vec3d,
-    normal: Vec3d,
-    f: Scalar,
+    bottom_left: Vector3<f64>,
+    top_left: Vector3<f64>,
+    top_right: Vector3<f64>,
+    bottom_right: Vector3<f64>,
+    normal: Vector3<f64>,
+    f: f64,
     color: Rgb<u8>,
 }
 
 impl Floor {
 
-    fn new(bottom_left: Vec3d, top_left: Vec3d, top_right: Vec3d, bottom_right: Vec3d, color: Rgb<u8>) -> Floor {
+    fn new(bottom_left: Vector3<f64>, top_left: Vector3<f64>, top_right: Vector3<f64>, bottom_right: Vector3<f64>, color: Rgb<u8>) -> Floor {
 
         // Given 3 of the corners, calculate the normal and F
-        let a = vec3_sub(bottom_left, top_left);
-        let b = vec3_sub(bottom_left, bottom_right);
+        let a = bottom_left - top_left;
+        let b = bottom_left - bottom_right;
 
-        let normal: Vec3d = vec3_normalized([
-            a[1] * b[2] - a[2] * b[1],
-            a[2] * b[0] - a[0] * b[2],
-            a[0] * b[1] - a[1] * b[0]
-        ]);
+        let normal = Vector3 {
+            x: a.y * b.z - a.z * b.y,
+            y: a.z * b.x - a.x * b.z,
+            z: a.x * b.y - a.y * b.x
+        }.normalize();
 
         Floor {
             bottom_left, top_left, top_right, bottom_right,
             normal,
-            f: -vec3_dot(normal, bottom_left),
+            f: -dot(normal, bottom_left),
             color
         }
     }
 
     /// Translates the floor by the amount specified in the translation vector
-    fn translate(&self, translation: Vec3d) -> Floor {
+    fn translate(&self, translation: Vector3<f64>) -> Floor {
         Floor::new(
-            vec3_add(self.bottom_left, translation),   
-            vec3_add(self.top_left, translation),
-            vec3_add(self.top_right, translation),
-            vec3_add(self.bottom_right, translation),
+            self.bottom_left + translation,
+            self.top_left + translation,
+            self.top_right + translation,
+            self.bottom_right + translation,
             self.color
         )
     }
 
     /// Rotates the floor around the X axis by the provided rotation in degrees
-    fn rotate_x(&self, rotation: Scalar) -> Floor {
+    fn rotate_x(&self, rotation: f64) -> Floor {
 
         /// Rotates a single vector
-        fn rotate_x(v: Vec3d, rotation: Scalar) -> Vec3d {
+        fn rotate_x(v: Vector3<f64>, rotation: f64) -> Vector3<f64> {
 
             let theta = rotation * (std::f64::consts::PI / 180.0);
         
-            [
-                v[0],
-                v[1] * theta.cos() + v[2] * -theta.sin(),
-                v[1] * theta.sin() + v[2] * theta.cos()
-            ]
+            Vector3 {
+                x: v.x,
+                y: v.y * theta.cos() + v.z * -theta.sin(),
+                z: v.y * theta.sin() + v.z * theta.cos()
+            }
         }
         
         Floor::new(
@@ -90,13 +89,13 @@ impl Floor {
 
 // Individual ray that is fired through the scene
 struct Ray {
-    origin: Vec3d,
-    direction: Vec3d,
+    origin: Vector3<f64>,
+    direction: Vector3<f64>,
 }
 
 impl Ray {
-    fn new(origin: Vec3d, direction: Vec3d) -> Ray {
-        Ray { origin: origin, direction: vec3_normalized(direction) }
+    fn new(origin: Vector3<f64>, direction: Vector3<f64>) -> Ray {
+        Ray { origin: origin, direction: direction.normalize() }
     }
 }
 
@@ -106,12 +105,12 @@ trait Traceable {
 
     // If the Ray intersects the shape, returns the distance from the Ray's
     // origin and the color at that point.
-    fn intersect(&self, ray: &Ray) -> Option<(Scalar, Rgb<u8>)>;
+    fn intersect(&self, ray: &Ray) -> Option<(f64, Rgb<u8>)>;
 }
 
 // The background object always intersects and returns its static color
 impl Traceable for Background {
-    fn intersect(&self, _: &Ray) -> Option<(Scalar, Rgb<u8>)> {
+    fn intersect(&self, _: &Ray) -> Option<(f64, Rgb<u8>)> {
         Some((std::f64::INFINITY, self.color))
     }
 }
@@ -125,19 +124,19 @@ impl Traceable for Sphere {
     ///
     /// \omega = (-B \pm \sqrt{B^2 - 4 * C}) / 2
     ///
-    fn intersect(&self, ray: &Ray) -> Option<(Scalar, Rgb<u8>)> {
+    fn intersect(&self, ray: &Ray) -> Option<(f64, Rgb<u8>)> {
 
         // B=2 * (dx(x_o −x_c)+dy(y_o −y_c)+dz(z_o −z_c)) 
         // which is just the dot product
         // B = 2 * (d . (origin - center))
-        let b = 2.0 * vec3_dot(ray.direction, vec3_sub(ray.origin, self.center));
+        let b = 2.0 * dot(ray.direction, ray.origin - self.center);
 
         // C = (x_o −x_c)^2 +(y_o −y_c)^2 +(z_o −z_c)^2 − r^2
         // which also uses the dot product:
         // tmp = origin - center;
         // C = tmp . tmp - r^2
-        let c_sub = vec3_sub(ray.origin, self.center);
-        let c = vec3_dot(c_sub, c_sub) - (self.r * self.r);
+        let c_sub = ray.origin - self.center;
+        let c = dot(c_sub, c_sub) - (self.r * self.r);
 
         // Partial quadratic solution
         let partial = b * b - 4.0 * c;
@@ -156,7 +155,7 @@ impl Traceable for Sphere {
             } else if d2 < 0.0 {
                 d1
             } else {
-                Scalar::min(d1,d2)
+                f64::min(d1,d2)
             };
 
             Some((d, self.color))
@@ -170,15 +169,14 @@ impl Traceable for Floor {
     /// Plane intersection formula comes from CG II slides
     /// (2-2b-rt-basics-4.pdf).
     /// \omega = -(P_n . P_o + F) / (P+n . D)
-    fn intersect(&self, ray: &Ray) -> Option<(Scalar, Rgb<u8>)> {
+    fn intersect(&self, ray: &Ray) -> Option<(f64, Rgb<u8>)> {
 
-        let dist = -(vec3_dot(self.normal, ray.origin) + self.f) /
-                    vec3_dot(self.normal, ray.direction);
+        let dist = -(dot(self.normal, ray.origin) + self.f) /
+                    dot(self.normal, ray.direction);
 
         if dist > 0.0 {
 
-            let intersect = vec3_add(ray.origin, vec3_scale(ray.direction, dist));
-
+            let intersect = ray.origin + (ray.direction * dist);
             // Make sure the value is inside the shape boundaries
             if intersect[0] >= self.bottom_left[0] && intersect[0] <= self.bottom_right[0] &&
                 intersect[1] >= self.bottom_left[1] && intersect[1] <= self.top_left[1] {
@@ -200,26 +198,26 @@ fn main() {
     let background = Background { color: Rgb([0, 175, 215]) };
 
     let sphere1 = Sphere {
-        center: [-0.75, -0.5, 2.25],
+        center: Vector3::new(-0.75, -0.5, 2.25),
         r: 0.45,
         color: Rgb([255, 255, 0])
         };
 
     let sphere2 = Sphere {
-        center: [0.0, 0.0, 1.5],
+        center: Vector3::new(0.0, 0.0, 1.5),
         r: 0.5,
         color: Rgb([0, 225, 0])
         };
 
     let floor = Floor::new(
-        [-2.0, -2.0, 0.0],
-        [-2.0, 2.0, 0.0],
-        [2.0, 2.0, 0.0],
-        [2.0, -2.0, 0.0],
+        Vector3::new(-2.0, -2.0, 0.0),
+        Vector3::new(-2.0, 2.0, 0.0),
+        Vector3::new(2.0, 2.0, 0.0),
+        Vector3::new(2.0, -2.0, 0.0),
         Rgb([255, 0, 0])
     );
     let floor = floor.rotate_x( 75.0 );
-    let floor = floor.translate( [-1.0, -1.25, 2.0] );
+    let floor = floor.translate( Vector3::new(-1.0, -1.25, 2.0) );
 
     let shapes: Vec<&Traceable> = vec![&sphere1, &sphere2, &floor];
 
@@ -228,18 +226,18 @@ fn main() {
 
     let height = image.height(); // TODO properly translate, instead of hack
 
-    let dx = 1.0 / image.width() as Scalar;
-    let dy = 1.0 / image.height() as Scalar;
+    let dx = 1.0 / image.width() as f64;
+    let dy = 1.0 / image.height() as f64;
 
     // Trace through the scene
     for (xpixel, ypixel, pixel) in image.enumerate_pixels_mut() {
 
         let ypixel = height - ypixel; //TODO properly translate
 
-        let x = -0.5 + (xpixel as Scalar) * dx;
-        let y = -0.5 + (ypixel as Scalar) * dy;
+        let x = -0.5 + (xpixel as f64) * dx;
+        let y = -0.5 + (ypixel as f64) * dy;
 
-        let r = Ray::new([0.0, 0.0, 0.0], [x, y, IMAGE_PLANE]);
+        let r = Ray::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(x, y, IMAGE_PLANE));
 
         // Calculate the color for the pixel
         let bg = background.intersect(&r).expect("Background must always intersect!");
