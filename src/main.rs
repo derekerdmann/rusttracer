@@ -1,6 +1,5 @@
 extern crate piston_window;
 extern crate image;
-extern crate graphics;
 extern crate cgmath;
 
 use image::{ Rgb, ConvertBuffer };
