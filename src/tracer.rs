@@ -31,7 +31,7 @@ mod tests {
 
     use std;
     use image::Rgb;
-    use cgmath::{vec3};
+    use cgmath::vec3;
     use ray::Ray;
     use tracer::{Traceable, Background};
 
@@ -46,7 +46,7 @@ mod tests {
             Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, -1.0, 0.0)),
             Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, -1.0)),
         ];
-        
+
         let bg = Background { color: Rgb([0, 175, 215]) };
         for r in rays.iter() {
             let (dist, color) = bg.intersect(r).expect("Background must always intersect");
