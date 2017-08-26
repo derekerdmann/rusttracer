@@ -3,9 +3,9 @@ extern crate image;
 extern crate cgmath;
 
 use cgmath::{Vector3, InnerSpace, dot};
-use image::{Rgb};
-use tracer::{Traceable};
-use ray::{Ray};
+use image::Rgb;
+use tracer::Traceable;
+use ray::Ray;
 
 pub struct Floor {
     pub bottom_left: Vector3<f64>,
@@ -110,4 +110,3 @@ impl Traceable for Floor {
         }
     }
 }
-

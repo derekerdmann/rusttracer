@@ -2,9 +2,9 @@ extern crate image;
 extern crate cgmath;
 
 use cgmath::{Vector3, dot};
-use image::{Rgb};
-use tracer::{Traceable};
-use ray::{Ray};
+use image::Rgb;
+use tracer::Traceable;
+use ray::Ray;
 
 pub struct Sphere {
     pub center: Vector3<f64>,

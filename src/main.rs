@@ -1,7 +1,8 @@
 extern crate piston_window;
 extern crate image;
 
-#[allow(unused_imports)] // macro_use is only in test modules
+#[allow(unused_imports)]
+// macro_use is only in test modules
 #[macro_use]
 extern crate cgmath;
 
@@ -11,11 +12,11 @@ mod floor;
 mod ray;
 
 use image::{Rgb, ConvertBuffer};
-use cgmath::{vec3};
+use cgmath::vec3;
 use tracer::{Traceable, Background};
-use sphere::{Sphere};
-use floor::{Floor};
-use ray::{Ray};
+use sphere::Sphere;
+use floor::Floor;
+use ray::Ray;
 
 const IMAGE_PLANE: f64 = 0.5;
 

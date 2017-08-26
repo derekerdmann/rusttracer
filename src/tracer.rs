@@ -1,8 +1,8 @@
 extern crate std;
 extern crate image;
 
-use ray::{Ray};
-use image::{Rgb};
+use ray::Ray;
+use image::Rgb;
 
 
 // Trait for objects that can be placed in the raytracer scene
