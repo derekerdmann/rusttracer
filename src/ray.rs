@@ -1,5 +1,3 @@
-extern crate cgmath;
-
 use cgmath::{Vector3, InnerSpace};
 
 // Individual ray that is fired through the scene
@@ -25,4 +23,20 @@ impl Ray {
     pub fn direction(&self) -> Vector3<f64> {
         self.direction 
     }
+}
+
+
+#[cfg(test)]
+mod tests {
+
+    use cgmath::{InnerSpace, vec3};
+
+    use ray::{Ray};
+
+    #[test]
+    fn auto_normalize() {
+        let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(2.0, 0.0, 0.0));
+        assert_ulps_eq!(r.direction().magnitude(), 1.0);
+    }
+    
 }
