@@ -5,12 +5,14 @@ extern crate cgmath;
 mod tracer;
 mod sphere;
 mod floor;
+mod ray;
 
 use image::{Rgb, ConvertBuffer};
 use cgmath::{vec3};
-use tracer::{Ray, Traceable, Background};
+use tracer::{Traceable, Background};
 use sphere::{Sphere};
 use floor::{Floor};
+use ray::{Ray};
 
 const IMAGE_PLANE: f64 = 0.5;
 

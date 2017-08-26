@@ -3,7 +3,8 @@ extern crate cgmath;
 
 use cgmath::{Vector3, dot};
 use image::{Rgb};
-use tracer::{Ray, Traceable};
+use tracer::{Traceable};
+use ray::{Ray};
 
 pub struct Sphere {
     pub center: Vector3<f64>,
@@ -23,7 +24,7 @@ impl Traceable for Sphere {
         // B=2 * (dx(x_o −x_c)+dy(y_o −y_c)+dz(z_o −z_c))
         // which is just the dot product
         // B = 2 * (d . (origin - center))
-        let b = 2.0 * dot(ray.direction, ray.origin - self.center);
+        let b = 2.0 * dot(ray.direction(), ray.origin - self.center);
 
         // C = (x_o −x_c)^2 +(y_o −y_c)^2 +(z_o −z_c)^2 − r^2
         // which also uses the dot product:

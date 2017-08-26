@@ -4,7 +4,8 @@ extern crate cgmath;
 
 use cgmath::{Vector3, InnerSpace, dot};
 use image::{Rgb};
-use tracer::{Ray, Traceable};
+use tracer::{Traceable};
+use ray::{Ray};
 
 pub struct Floor {
     pub bottom_left: Vector3<f64>,
@@ -88,11 +89,11 @@ impl Traceable for Floor {
     /// \omega = -(P_n . P_o + F) / (P+n . D)
     fn intersect(&self, ray: &Ray) -> Option<(f64, Rgb<u8>)> {
 
-        let dist = -(dot(self.normal, ray.origin) + self.f) / dot(self.normal, ray.direction);
+        let dist = -(dot(self.normal, ray.origin) + self.f) / dot(self.normal, ray.direction());
 
         if dist > 0.0 {
 
-            let intersect = ray.origin + (ray.direction * dist);
+            let intersect = ray.origin + (ray.direction() * dist);
             // Make sure the value is inside the shape boundaries
             if intersect[0] >= self.bottom_left[0] && intersect[0] <= self.bottom_right[0] &&
                 intersect[1] >= self.bottom_left[1] &&
