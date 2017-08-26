@@ -36,8 +36,8 @@ mod tests {
     // magnitude of 1.0
     #[test]
     fn auto_normalize() {
-        let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(2.0, 0.0, 0.0));
-        assert_ulps_eq!(r.direction().magnitude(), 1.0);
+        let r1 = Ray::new(vec3(0.0, 0.0, 0.0), vec3(2.0, 0.0, 0.0));
+        assert_ulps_eq!(r1.direction().magnitude(), 1.0);
 
         let r2 = Ray::new(vec3(0.0, 0.0, 0.0), vec3(2.889, 90.0, -30.5));
         assert_ulps_eq!(r2.direction().magnitude(), 1.0);
