@@ -134,12 +134,16 @@ mod tests {
         );
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
-        let (dist, color) = floor.intersect(&r).expect("Ray should intersect with floor");
+        let (dist, color) = floor.intersect(&r).expect(
+            "Ray should intersect with floor",
+        );
         assert_eq!(floor.color, color);
         assert_ulps_eq!(1.0, dist);
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(1.0, -1.0, 1.0));
-        let (_, color) = floor.intersect(&r).expect("Ray should intersect with floor at edge");
+        let (_, color) = floor.intersect(&r).expect(
+            "Ray should intersect with floor at edge",
+        );
         assert_eq!(floor.color, color);
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0));
@@ -167,13 +171,17 @@ mod tests {
 
         // Ray toward floor, from new center
         let r = Ray::new(vec3(1.0, 2.0, 3.0), vec3(0.0, 0.0, 1.0));
-        let (dist, color) = floor.intersect(&r).expect("Ray should intersect with floor");
+        let (dist, color) = floor.intersect(&r).expect(
+            "Ray should intersect with floor",
+        );
         assert_eq!(floor.color, color);
         assert_ulps_eq!(1.0, dist);
 
         // Ray from origin, toward new center
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(1.0, 2.0, 3.0));
-        let (_, color) = floor.intersect(&r).expect("Ray should intersect with floor");
+        let (_, color) = floor.intersect(&r).expect(
+            "Ray should intersect with floor",
+        );
         assert_eq!(floor.color, color);
     }
 
@@ -197,7 +205,9 @@ mod tests {
 
         // Ray from origin, toward Y axis
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
-        let (dist, color) = floor.intersect(&r).expect("Ray should intersect with floor");
+        let (dist, color) = floor.intersect(&r).expect(
+            "Ray should intersect with floor",
+        );
         assert_eq!(floor.color, color);
         assert_ulps_eq!(1.0, dist);
     }

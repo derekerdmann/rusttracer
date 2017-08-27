@@ -79,7 +79,9 @@ mod tests {
         };
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
-        let (dist, color) = sphere.intersect(&r).expect("Ray should intersect with sphere");
+        let (dist, color) = sphere.intersect(&r).expect(
+            "Ray should intersect with sphere",
+        );
         assert_eq!(sphere.color, color);
         assert_ulps_eq!(0.5, dist);
     }
@@ -95,7 +97,9 @@ mod tests {
         };
 
         let r = Ray::new(vec3(0.0, 0.5, 0.0), vec3(0.0, 0.0, 1.0));
-        let (dist, color) = sphere.intersect(&r).expect("Ray should intersect with sphere at tangent");
+        let (dist, color) = sphere.intersect(&r).expect(
+            "Ray should intersect with sphere at tangent",
+        );
         assert_eq!(sphere.color, color);
         assert_ulps_eq!(1.0, dist);
     }
