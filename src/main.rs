@@ -52,7 +52,7 @@ fn main() {
     // Create the raw image buffer
     let mut image = image::RgbImage::from_pixel(640, 640, Rgb([255, 0, 0]));
 
-    let height = image.height(); // TODO properly translate, instead of hack
+    let height = image.height();
 
     let dx = 1.0 / image.width() as f64;
     let dy = 1.0 / image.height() as f64;
@@ -60,7 +60,11 @@ fn main() {
     // Trace through the scene
     for (xpixel, ypixel, pixel) in image.enumerate_pixels_mut() {
 
-        let ypixel = height - ypixel; //TODO properly translate
+        // enumerate_pixels_mut() iterates from top to bottom and left to right,
+        // rather than bottom to top, left to right. Rather than reworking the
+        // ray calculations, just figure out the pixel coordinates we actually
+        // want to calculate.
+        let ypixel = height - ypixel;
 
         let x = -0.5 + (xpixel as f64) * dx;
         let y = -0.5 + (ypixel as f64) * dy;
