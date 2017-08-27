@@ -57,3 +57,46 @@ impl Traceable for Sphere {
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+
+    use cgmath::vec3;
+    use tracer::Traceable;
+    use sphere::Sphere;
+    use ray::Ray;
+    use image::Rgb;
+
+    // Tests collisions with a sphere, pointing at center
+    #[test]
+    fn intersect() {
+
+        let sphere = Sphere {
+            center: vec3(0.0, 0.0, 1.0),
+            r: 0.5,
+            color: Rgb([255, 255, 0]),
+        };
+
+        let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
+        let (dist, color) = sphere.intersect(&r).expect("Ray should intersect with sphere");
+        assert_eq!(sphere.color, color);
+        assert_ulps_eq!(0.5, dist);
+    }
+
+
+    #[test]
+    fn intersect_tangent() {
+
+        let sphere = Sphere {
+            center: vec3(0.0, 0.0, 1.0),
+            r: 0.5,
+            color: Rgb([255, 255, 0]),
+        };
+
+        let r = Ray::new(vec3(0.0, 0.5, 0.0), vec3(0.0, 0.0, 1.0));
+        let (dist, color) = sphere.intersect(&r).expect("Ray should intersect with sphere at tangent");
+        assert_eq!(sphere.color, color);
+        assert_ulps_eq!(1.0, dist);
+    }
+}
