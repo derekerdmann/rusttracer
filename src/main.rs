@@ -2,7 +2,7 @@ extern crate piston_window;
 extern crate image;
 
 #[allow(unused_imports)]
-// macro_use is only in test modules
+// this macro_use is only used in test modules
 #[macro_use]
 extern crate cgmath;
 

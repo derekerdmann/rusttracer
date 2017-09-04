@@ -1,6 +1,3 @@
-extern crate image;
-extern crate cgmath;
-
 use cgmath::{Vector3, dot};
 use image::Rgb;
 use tracer::Traceable;

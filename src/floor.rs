@@ -1,6 +1,4 @@
 extern crate std;
-extern crate image;
-extern crate cgmath;
 
 use cgmath::{Vector3, InnerSpace, dot};
 use image::Rgb;
