@@ -69,6 +69,8 @@ mod tests {
     use cgmath::vec3;
     use ray::Ray;
     use tracer::{Traceable, Background};
+    use floor::Floor;
+    use super::shape_intersect;
 
     // Tests that the background always intersects with any Ray
     #[test]
@@ -88,6 +90,36 @@ mod tests {
             assert_eq!(bg.color, intersect.color);
             assert_ulps_eq!(std::f64::INFINITY, intersect.distance);
         }
+    }
+
+    // Tests that the closest shape is selected
+    #[test]
+    fn intersect_ordering() {
+
+        let f1 = Floor::new(
+            vec3(-1.0, -1.0, 1.0),
+            vec3(-1.0, 1.0, 1.0),
+            vec3(1.0, -1.0, 1.0),
+            vec3(1.0, 1.0, 1.0),
+            Rgb([255, 0, 0]),
+        );
+
+        let f2 = Floor::new(
+            vec3(-1.0, -1.0, 2.0),
+            vec3(-1.0, 1.0, 2.0),
+            vec3(1.0, -1.0, 2.0),
+            vec3(1.0, 1.0, 2.0),
+            Rgb([0, 255, 0]),
+        );
+
+        let shapes: Vec<&Traceable> = vec![&f1, &f2];
+
+        let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
+
+        let intersect = shape_intersect(&r, &shapes).expect("Both of these objects should intersect");
+
+        assert_ulps_eq!(1.0, intersect.distance);
+        assert_eq!(f1.color, intersect.color);
     }
 
 }
