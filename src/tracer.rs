@@ -25,6 +25,24 @@ impl Traceable for Background {
     }
 }
 
+// The main tracer function. Fires the ray into the scene, calculating the
+// objects it intersects and the final output color
+pub fn trace(r: Ray, shapes: &Vec<&Traceable>, background: &Traceable) -> Rgb<u8> {
+
+    let bg = background.intersect(&r).expect(
+        "Background must always intersect!",
+    );
+
+    let (_, color) = shapes.iter().fold(bg, {
+        |(best_dist, best_color), &shape| match shape.intersect(&r) {
+            Some((dist, color)) if dist < best_dist => (dist, color),
+            _ => (best_dist, best_color),
+        }
+    });
+
+    color
+}
+
 
 #[cfg(test)]
 mod tests {

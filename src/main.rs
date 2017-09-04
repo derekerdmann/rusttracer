@@ -71,19 +71,7 @@ fn main() {
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(x, y, IMAGE_PLANE));
 
-        // Calculate the color for the pixel
-        let bg = background.intersect(&r).expect(
-            "Background must always intersect!",
-        );
-        let (_, color) = shapes.iter().fold(bg, {
-            |(best_dist, best_color), &shape| match shape.intersect(&r) {
-                Some((dist, color)) if dist < best_dist => (dist, color),
-                _ => (best_dist, best_color),
-            }
-        });
-
-        // Update the pixel color
-        *pixel = color;
+        *pixel = tracer::trace(r, &shapes, &background);
     }
 
     // Set up the window for rendering
