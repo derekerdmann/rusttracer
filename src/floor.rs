@@ -2,7 +2,7 @@ extern crate std;
 
 use cgmath::{Vector3, InnerSpace, dot};
 use image::Rgb;
-use tracer::Traceable;
+use tracer::{Traceable, Intersect};
 use ray::Ray;
 
 pub struct Floor {
@@ -85,20 +85,20 @@ impl Traceable for Floor {
     /// Plane intersection formula comes from CG II slides
     /// (2-2b-rt-basics-4.pdf).
     /// \omega = -(P_n . P_o + F) / (P+n . D)
-    fn intersect(&self, ray: &Ray) -> Option<(f64, Rgb<u8>)> {
+    fn intersect(&self, ray: &Ray) -> Option<Intersect> {
 
-        let dist = -(dot(self.normal, ray.origin) + self.f) / dot(self.normal, ray.direction());
+        let distance = -(dot(self.normal, ray.origin) + self.f) / dot(self.normal, ray.direction());
 
-        if dist > 0.0 {
+        if distance > 0.0 {
 
-            let intersect = ray.origin + (ray.direction() * dist);
+            let intersect = ray.origin + (ray.direction() * distance);
             // Make sure the value is inside the shape boundaries
             if intersect[0] >= self.bottom_left[0] && intersect[0] <= self.bottom_right[0] &&
                 intersect[1] >= self.bottom_left[1] &&
                 intersect[1] <= self.top_left[1]
             {
 
-                Some((dist, self.color))
+                Some(Intersect { distance, point: None, color: self.color })
             } else {
                 None
             }
@@ -132,17 +132,17 @@ mod tests {
         );
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
-        let (dist, color) = floor.intersect(&r).expect(
+        let intersect = floor.intersect(&r).expect(
             "Ray should intersect with floor",
         );
-        assert_eq!(floor.color, color);
-        assert_ulps_eq!(1.0, dist);
+        assert_eq!(floor.color, intersect.color);
+        assert_ulps_eq!(1.0, intersect.distance);
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(1.0, -1.0, 1.0));
-        let (_, color) = floor.intersect(&r).expect(
+        let intersect = floor.intersect(&r).expect(
             "Ray should intersect with floor at edge",
         );
-        assert_eq!(floor.color, color);
+        assert_eq!(floor.color, intersect.color);
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0));
         let result = floor.intersect(&r);
@@ -169,18 +169,18 @@ mod tests {
 
         // Ray toward floor, from new center
         let r = Ray::new(vec3(1.0, 2.0, 3.0), vec3(0.0, 0.0, 1.0));
-        let (dist, color) = floor.intersect(&r).expect(
+        let intersect = floor.intersect(&r).expect(
             "Ray should intersect with floor",
         );
-        assert_eq!(floor.color, color);
-        assert_ulps_eq!(1.0, dist);
+        assert_eq!(floor.color, intersect.color);
+        assert_ulps_eq!(1.0, intersect.distance);
 
         // Ray from origin, toward new center
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(1.0, 2.0, 3.0));
-        let (_, color) = floor.intersect(&r).expect(
+        let intersect = floor.intersect(&r).expect(
             "Ray should intersect with floor",
         );
-        assert_eq!(floor.color, color);
+        assert_eq!(floor.color, intersect.color);
     }
 
     // Tests collisions after rotating the floor
@@ -203,10 +203,10 @@ mod tests {
 
         // Ray from origin, toward Y axis
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
-        let (dist, color) = floor.intersect(&r).expect(
+        let intersect = floor.intersect(&r).expect(
             "Ray should intersect with floor",
         );
-        assert_eq!(floor.color, color);
-        assert_ulps_eq!(1.0, dist);
+        assert_eq!(floor.color, intersect.color);
+        assert_ulps_eq!(1.0, intersect.distance);
     }
 }

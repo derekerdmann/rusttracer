@@ -1,6 +1,6 @@
 use cgmath::{Vector3, dot};
 use image::Rgb;
-use tracer::Traceable;
+use tracer::{Traceable, Intersect};
 use ray::Ray;
 
 pub struct Sphere {
@@ -16,7 +16,7 @@ impl Traceable for Sphere {
     ///
     /// \omega = (-B \pm \sqrt{B^2 - 4 * C}) / 2
     ///
-    fn intersect(&self, ray: &Ray) -> Option<(f64, Rgb<u8>)> {
+    fn intersect(&self, ray: &Ray) -> Option<Intersect> {
 
         // B=2 * (dx(x_o −x_c)+dy(y_o −y_c)+dz(z_o −z_c))
         // which is just the dot product
@@ -42,7 +42,7 @@ impl Traceable for Sphere {
 
             // There are two solutions, so return the smallest positive result.
             // The larger value would be the far side of the sphere.
-            let d = if d1 < 0.0 {
+            let distance = if d1 < 0.0 {
                 d2
             } else if d2 < 0.0 {
                 d1
@@ -50,7 +50,7 @@ impl Traceable for Sphere {
                 f64::min(d1, d2)
             };
 
-            Some((d, self.color))
+            Some(Intersect { distance, point:None, color: self.color })
         }
     }
 }
@@ -76,11 +76,11 @@ mod tests {
         };
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
-        let (dist, color) = sphere.intersect(&r).expect(
+        let intersect = sphere.intersect(&r).expect(
             "Ray should intersect with sphere",
         );
-        assert_eq!(sphere.color, color);
-        assert_ulps_eq!(0.5, dist);
+        assert_eq!(sphere.color, intersect.color);
+        assert_ulps_eq!(0.5, intersect.distance);
     }
 
 
@@ -94,10 +94,11 @@ mod tests {
         };
 
         let r = Ray::new(vec3(0.0, 0.5, 0.0), vec3(0.0, 0.0, 1.0));
-        let (dist, color) = sphere.intersect(&r).expect(
+        let intersect = sphere.intersect(&r).expect(
             "Ray should intersect with sphere at tangent",
         );
-        assert_eq!(sphere.color, color);
-        assert_ulps_eq!(1.0, dist);
+
+        assert_eq!(sphere.color, intersect.color);
+        assert_ulps_eq!(1.0, intersect.distance);
     }
 }
