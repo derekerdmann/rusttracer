@@ -98,7 +98,11 @@ impl Traceable for Floor {
                 intersect[1] <= self.top_left[1]
             {
 
-                Some(Intersect { distance, point: None, color: self.color })
+                Some(Intersect {
+                    distance,
+                    point: None,
+                    color: self.color,
+                })
             } else {
                 None
             }

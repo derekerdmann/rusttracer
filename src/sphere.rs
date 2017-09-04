@@ -50,7 +50,11 @@ impl Traceable for Sphere {
                 f64::min(d1, d2)
             };
 
-            Some(Intersect { distance, point:None, color: self.color })
+            Some(Intersect {
+                distance,
+                point: None,
+                color: self.color,
+            })
         }
     }
 }

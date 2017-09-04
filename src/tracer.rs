@@ -40,27 +40,24 @@ impl Traceable for Background {
     }
 }
 
+// Of all shapes that intersect with this ray, select the closest one.
+fn shape_intersect(r: &Ray, shapes: &Vec<&Traceable>) -> Option<Intersect> {
+    shapes
+        .iter()
+        .filter_map(|&shape| shape.intersect(&r))
+        .min_by(|first, second| {
+            first.distance.partial_cmp(&second.distance).unwrap()
+        })
+
+}
+
 // The main tracer function. Fires the ray into the scene, calculating the
 // objects it intersects and the final output color
-pub fn trace(r: Ray, shapes: &Vec<&Traceable>, background: &Traceable) -> image::Rgb<u8> {
-
-    let bg = background.intersect(&r).expect(
-        "Background must always intersect!",
-    );
-
-    let intersect = shapes.iter().fold(bg, |best, &shape| {
-        if let Some(inter) = shape.intersect(&r) {
-            if inter.distance < best.distance {
-                inter
-            } else {
-                best
-            }
-        } else {
-            best
-        }
-    });
-
-    intersect.color
+pub fn trace(r: Ray, shapes: &Vec<&Traceable>, background: &Background) -> image::Rgb<u8> {
+    match shape_intersect(&r, shapes) {
+        Some(intersect) => intersect.color,
+        None => background.color,
+    }
 }
 
 
