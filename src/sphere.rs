@@ -1,6 +1,6 @@
 use cgmath::{Vector3, dot};
 use image::Rgb;
-use tracer::{Traceable, Intersect};
+use tracer::{Shape, Intersect};
 use ray::Ray;
 
 pub struct Sphere {
@@ -9,7 +9,7 @@ pub struct Sphere {
     pub color: Rgb<u8>,
 }
 
-impl Traceable for Sphere {
+impl Shape for Sphere {
     /// Sphere intersection formula comes from CG II slides
     /// (2-2b-rt-basics-4.pdf). \omega is the distance from the origin of the ray
     /// to the intersect point.

@@ -2,7 +2,7 @@ extern crate std;
 
 use cgmath::{Vector3, InnerSpace, dot};
 use image::Rgb;
-use tracer::{Traceable, Intersect};
+use tracer::{Shape, Intersect};
 use ray::Ray;
 
 pub struct Floor {
@@ -81,7 +81,7 @@ impl Floor {
     }
 }
 
-impl Traceable for Floor {
+impl Shape for Floor {
     /// Plane intersection formula comes from CG II slides
     /// (2-2b-rt-basics-4.pdf).
     /// \omega = -(P_n . P_o + F) / (P+n . D)

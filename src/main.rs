@@ -13,7 +13,7 @@ mod ray;
 
 use image::{Rgb, ConvertBuffer};
 use cgmath::vec3;
-use tracer::{Traceable, Background};
+use tracer::{Shape, Background};
 use sphere::Sphere;
 use floor::Floor;
 use ray::Ray;
@@ -47,7 +47,7 @@ fn main() {
     let floor = floor.rotate_x(75.0);
     let floor = floor.translate(vec3(-1.0, -1.25, 2.0));
 
-    let shapes: Vec<&Traceable> = vec![&sphere1, &sphere2, &floor];
+    let shapes: Vec<&Shape> = vec![&sphere1, &sphere2, &floor];
 
     // Create the raw image buffer
     let mut image = image::RgbImage::from_pixel(640, 640, Rgb([255, 0, 0]));

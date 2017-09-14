@@ -17,7 +17,7 @@ pub struct Intersect {
 }
 
 // Trait for objects that can be placed in the raytracer scene
-pub trait Traceable {
+pub trait Shape {
     // If the Ray intersects the shape, returns the distance from the Ray's
     // origin and the color at that point.
     fn intersect(&self, ray: &Ray) -> Option<Intersect>;
@@ -30,7 +30,7 @@ pub struct Background {
 }
 
 // The background object always intersects and returns its static color
-impl Traceable for Background {
+impl Shape for Background {
     fn intersect(&self, _: &Ray) -> Option<Intersect> {
         Some(Intersect {
             distance: std::f64::INFINITY,
@@ -41,19 +41,18 @@ impl Traceable for Background {
 }
 
 // Of all shapes that intersect with this ray, select the closest one.
-fn shape_intersect(r: &Ray, shapes: &Vec<&Traceable>) -> Option<Intersect> {
+fn shape_intersect(r: &Ray, shapes: &Vec<&Shape>) -> Option<Intersect> {
     shapes
         .iter()
         .filter_map(|&shape| shape.intersect(&r))
         .min_by(|first, second| {
             first.distance.partial_cmp(&second.distance).unwrap()
         })
-
 }
 
 // The main tracer function. Fires the ray into the scene, calculating the
 // objects it intersects and the final output color
-pub fn trace(r: Ray, shapes: &Vec<&Traceable>, background: &Background) -> image::Rgb<u8> {
+pub fn trace(r: Ray, shapes: &Vec<&Shape>, background: &Background) -> image::Rgb<u8> {
     match shape_intersect(&r, shapes) {
         Some(intersect) => intersect.color,
         None => background.color,
