@@ -67,7 +67,7 @@ mod tests {
     use image::Rgb;
     use cgmath::vec3;
     use ray::Ray;
-    use tracer::{Traceable, Background};
+    use tracer::{Shape, Background};
     use floor::Floor;
     use super::shape_intersect;
 
@@ -111,7 +111,7 @@ mod tests {
             Rgb([0, 255, 0]),
         );
 
-        let shapes: Vec<&Traceable> = vec![&f1, &f2];
+        let shapes: Vec<&Shape> = vec![&f1, &f2];
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
 

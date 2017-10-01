@@ -64,7 +64,7 @@ impl Shape for Sphere {
 mod tests {
 
     use cgmath::vec3;
-    use tracer::Traceable;
+    use tracer::Shape;
     use sphere::Sphere;
     use ray::Ray;
     use image::Rgb;

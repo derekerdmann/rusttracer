@@ -1,5 +1,6 @@
 {
     "files.exclude": {
         "**/*.rs.bk": true
-    }
+    },
+    "rust.cfg_test": true
 }

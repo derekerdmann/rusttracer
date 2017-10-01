@@ -118,7 +118,7 @@ impl Shape for Floor {
 mod tests {
 
     use cgmath::vec3;
-    use tracer::Traceable;
+    use tracer::Shape;
     use floor::Floor;
     use ray::Ray;
     use image::Rgb;
