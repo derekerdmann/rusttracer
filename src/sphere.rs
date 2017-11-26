@@ -55,8 +55,8 @@ impl Shape for Sphere {
 
             Some(Intersect {
                 distance,
-                point: Some(intersect),
-                normal: Some(normal),
+                point: intersect,
+                normal: normal,
                 color: self.color,
             })
         }

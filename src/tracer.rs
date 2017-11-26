@@ -10,10 +10,10 @@ pub struct Intersect {
     pub distance: f64,
 
     // Point in space where the intersect occurs
-    pub point: Option<Vector3<f64>>,
+    pub point: Vector3<f64>,
 
     // Normal vector from the surface of the shape at this intersect
-    pub normal: Option<Vector3<f64>>,
+    pub normal: Vector3<f64>,
 
     // Color of the object where the intersect occurs
     pub color: image::Rgb<u8>,
@@ -30,18 +30,6 @@ pub trait Shape {
 // Objects that can be placed in a scene
 pub struct Background {
     pub color: image::Rgb<u8>,
-}
-
-// The background object always intersects and returns its static color
-impl Shape for Background {
-    fn intersect(&self, _: &Ray) -> Option<Intersect> {
-        Some(Intersect {
-            distance: std::f64::INFINITY,
-            point: None,
-            normal: None,
-            color: self.color,
-        })
-    }
 }
 
 // Of all shapes that intersect with this ray, select the closest one.

@@ -101,8 +101,8 @@ impl Shape for Floor {
 
                 Some(Intersect {
                     distance,
-                    point: Some(intersect),
-                    normal: Some(self.normal),
+                    point: intersect,
+                    normal: self.normal,
                     color: self.color,
                 })
             } else {
