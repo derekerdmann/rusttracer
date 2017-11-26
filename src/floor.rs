@@ -91,16 +91,18 @@ impl Shape for Floor {
 
         if distance > 0.0 {
 
-            let intersect = ray.origin + (ray.direction() * distance);
+            let intersect = ray.extend(distance);
             // Make sure the value is inside the shape boundaries
-            if intersect[0] >= self.bottom_left[0] && intersect[0] <= self.bottom_right[0] &&
-                intersect[1] >= self.bottom_left[1] &&
-                intersect[1] <= self.top_left[1]
+            if intersect.x >= self.bottom_left.x &&
+                intersect.x <= self.bottom_right.x &&
+                intersect.y >= self.bottom_left.y &&
+                intersect.y <= self.top_left.y
             {
 
                 Some(Intersect {
                     distance,
-                    point: None,
+                    point: Some(intersect),
+                    normal: Some(self.normal),
                     color: self.color,
                 })
             } else {

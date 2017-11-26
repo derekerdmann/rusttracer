@@ -12,6 +12,9 @@ pub struct Intersect {
     // Point in space where the intersect occurs
     pub point: Option<Vector3<f64>>,
 
+    // Normal vector from the surface of the shape at this intersect
+    pub normal: Option<Vector3<f64>>,
+
     // Color of the object where the intersect occurs
     pub color: image::Rgb<u8>,
 }
@@ -35,6 +38,7 @@ impl Shape for Background {
         Some(Intersect {
             distance: std::f64::INFINITY,
             point: None,
+            normal: None,
             color: self.color,
         })
     }

@@ -1,4 +1,4 @@
-use cgmath::{Vector3, dot};
+use cgmath::{Vector3, dot, InnerSpace};
 use image::Rgb;
 use tracer::{Shape, Intersect};
 use ray::Ray;
@@ -50,9 +50,13 @@ impl Shape for Sphere {
                 f64::min(d1, d2)
             };
 
+            let intersect = ray.extend(distance);
+            let normal = (intersect - self.center).normalize();
+
             Some(Intersect {
                 distance,
-                point: None,
+                point: Some(intersect),
+                normal: Some(normal),
                 color: self.color,
             })
         }
