@@ -22,6 +22,12 @@ impl Ray {
     pub fn direction(&self) -> Vector3<f64> {
         self.direction
     }
+
+    // Extends the ray by the distance specified. Resulting vector will not be
+    // normalized.
+    pub fn extend(&self, distance: f64) -> Vector3<f64> {
+        self.origin + (self.direction * distance)
+    }
 }
 
 
@@ -41,6 +47,18 @@ mod tests {
 
         let r2 = Ray::new(vec3(0.0, 0.0, 0.0), vec3(2.889, 90.0, -30.5));
         assert_ulps_eq!(r2.direction().magnitude(), 1.0);
+    }
+
+    // Tests that an extended ray has the correct magnitude and points in the
+    // same direction as the original ray
+    #[test]
+    fn extend() {
+        let r1 = Ray::new(vec3(0.0, 0.0, 0.0), vec3(2.0, 0.0, 0.0));
+        assert_ulps_eq!(r1.direction().magnitude(), 1.0);
+
+        let extended1 = r1.extend(2.0);
+        assert_ulps_eq!(extended1.magnitude(), 2.0);
+        assert_ulps_eq!(r1.origin + r1.direction(), extended1.normalize());
     }
 
 }
