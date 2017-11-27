@@ -76,19 +76,6 @@ impl Material for SolidColorMaterial {
 }
 
 // Modulates a color by the specified vector
-pub fn modulate(color: image::Rgb<u8>, amount: Vector3<f64>) -> image::Rgb<u8> {
-    assert!(amount.x <= 1.0);
-    assert!(amount.y <= 1.0);
-    assert!(amount.z <= 1.0);
-
-    image::Rgb([
-        (color[0] as f64 * amount.x) as u8,
-        (color[1] as f64 * amount.y) as u8,
-        (color[2] as f64 * amount.z) as u8,
-    ])
-}
-
-// Modulates a color by the specified vector
 pub fn modulate_scalar(color: image::Rgb<u8>, amount: f64) -> image::Rgb<u8> {
     image::Rgb([
         (color[0] as f64 * amount) as u8,

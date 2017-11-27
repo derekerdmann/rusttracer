@@ -1,7 +1,7 @@
 extern crate image;
 extern crate std;
 
-use cgmath::Vector3;
+use cgmath::{InnerSpace, Vector3};
 use ray::Ray;
 use material::Color;
 use light::{phong, Light};
@@ -74,7 +74,12 @@ pub fn trace(
     background: &Background,
 ) -> image::Rgb<u8> {
     match shape_intersect(&r, shapes, None) {
-        Some(intersect) => phong(&intersect, shapes, lights, r.direction() - r.origin),
+        Some(intersect) => phong(
+            &intersect,
+            shapes,
+            lights,
+            (r.direction() - r.origin).normalize(),
+        ),
         None => background.color,
     }
 }

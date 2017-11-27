@@ -30,7 +30,7 @@ pub fn phong(
         let s = (light.position - intersect.point).normalize();
 
         // Reflected vector
-        let r = s - 2.0 * (dot(s, n) / n.magnitude().powi(2)) * n;
+        let r = (s - 2.0 * (dot(s, n) / n.magnitude().powi(2)) * n).normalize();
 
         match shape_intersect(&Ray::new(intersect.point, s), shapes, Some(intersect.shape)) {
             None => {
@@ -68,12 +68,4 @@ pub fn phong(
             Some(_) => result,
         }
     })
-}
-
-
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    fn thing() {}
 }

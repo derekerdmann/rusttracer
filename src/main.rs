@@ -32,7 +32,7 @@ fn main() {
     };
 
     let sphere1 = Sphere {
-        center: vec3(-0.75, -0.5, 2.25),
+        center: vec3(-0.87, -0.5, 2.25),
         r: 0.45,
         material: Box::new(SolidColorMaterial::new(Rgb([255, 255, 0]))),
     };
