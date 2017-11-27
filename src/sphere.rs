@@ -1,5 +1,5 @@
-use cgmath::{Vector3, dot, InnerSpace};
-use tracer::{Shape, Intersect};
+use cgmath::{dot, InnerSpace, Vector3};
+use tracer::{Intersect, Shape};
 use ray::Ray;
 use material::Material;
 use std::any::Any;
@@ -15,8 +15,7 @@ impl PartialEq for Sphere {
     // same coordinates and radius but different materials, we have a bigger
     // problem.
     fn eq(&self, other: &Sphere) -> bool {
-        ulps_eq!(self.center, other.center) && 
-        ulps_eq!(self.r, other.r)
+        ulps_eq!(self.center, other.center) && ulps_eq!(self.r, other.r)
     }
 }
 
@@ -28,7 +27,6 @@ impl Shape for Sphere {
     /// \omega = (-B \pm \sqrt{B^2 - 4 * C}) / 2
     ///
     fn intersect(&self, ray: &Ray) -> Option<Intersect> {
-
         // B=2 * (dx(x_o −x_c)+dy(y_o −y_c)+dz(z_o −z_c))
         // which is just the dot product
         // B = 2 * (d . (origin - center))
@@ -46,7 +44,6 @@ impl Shape for Sphere {
 
         if partial < 0.0 {
             None
-
         } else {
             let d1 = (-b + partial) / 2.0;
             let d2 = (-b - partial) / 2.0;
@@ -69,16 +66,21 @@ impl Shape for Sphere {
                 point,
                 normal,
                 color: self.material.color(point),
-                shape: self
+                shape: self,
             })
         }
     }
 
     fn eq(&self, other: &Shape) -> bool {
-         other.as_any().downcast_ref::<Self>().map_or(false, |x| x == self)
+        other
+            .as_any()
+            .downcast_ref::<Self>()
+            .map_or(false, |x| x == self)
     }
 
-    fn as_any(&self) -> &Any { self }
+    fn as_any(&self) -> &Any {
+        self
+    }
 }
 
 
@@ -96,7 +98,6 @@ mod tests {
     // Tests collisions with a sphere, pointing at center
     #[test]
     fn intersect() {
-
         let color = image::Rgb([255, 255, 0]);
 
         let sphere = Sphere {
@@ -106,9 +107,9 @@ mod tests {
         };
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
-        let intersect = sphere.intersect(&r).expect(
-            "Ray should intersect with sphere",
-        );
+        let intersect = sphere
+            .intersect(&r)
+            .expect("Ray should intersect with sphere");
         assert_eq!(color, intersect.color.diffuse());
         assert_ulps_eq!(0.5, intersect.distance);
     }
@@ -116,7 +117,6 @@ mod tests {
 
     #[test]
     fn intersect_tangent() {
-
         let color = image::Rgb([255, 255, 0]);
 
         let sphere = Sphere {
@@ -126,9 +126,9 @@ mod tests {
         };
 
         let r = Ray::new(vec3(0.0, 0.5, 0.0), vec3(0.0, 0.0, 1.0));
-        let intersect = sphere.intersect(&r).expect(
-            "Ray should intersect with sphere at tangent",
-        );
+        let intersect = sphere
+            .intersect(&r)
+            .expect("Ray should intersect with sphere at tangent");
 
         assert_eq!(color, intersect.color.diffuse());
         assert_ulps_eq!(1.0, intersect.distance);

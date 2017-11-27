@@ -1,10 +1,10 @@
 extern crate image;
 extern crate std;
 
-use cgmath::{Vector3};
+use cgmath::Vector3;
 use ray::Ray;
 use material::Color;
-use light::{Light, phong};
+use light::{phong, Light};
 use std::any::Any;
 
 // Represents the intersection of a Ray with an object
@@ -36,8 +36,8 @@ pub trait Shape {
     fn as_any(&self) -> &Any;
 }
 
-impl<'a, 'b> PartialEq<Shape+'b> for Shape+'a {
-    fn eq(&self, other: &(Shape+'b)) -> bool {
+impl<'a, 'b> PartialEq<Shape + 'b> for Shape + 'a {
+    fn eq(&self, other: &(Shape + 'b)) -> bool {
         Shape::eq(self, other)
     }
 }
@@ -50,12 +50,16 @@ pub struct Background {
 
 // Of all shapes that intersect with this ray, select the closest one that's in
 // front of the starting point.
-pub fn shape_intersect<'a>(r: &Ray, shapes: &Vec<&'a Shape>, exclude: Option<&Shape>) -> Option<Intersect<'a>> {
+pub fn shape_intersect<'a>(
+    r: &Ray,
+    shapes: &Vec<&'a Shape>,
+    exclude: Option<&Shape>,
+) -> Option<Intersect<'a>> {
     shapes
         .iter()
-        .filter(|&shape| exclude.map_or(true, |e| &e != shape)) 
+        .filter(|&shape| exclude.map_or(true, |e| &e != shape))
         .filter_map(|&shape| shape.intersect(&r))
-        .filter(|intersect| intersect.distance >= 0.0 )
+        .filter(|intersect| intersect.distance >= 0.0)
         .min_by(|first, second| {
             first.distance.partial_cmp(&second.distance).unwrap()
         })
@@ -70,9 +74,7 @@ pub fn trace(
     background: &Background,
 ) -> image::Rgb<u8> {
     match shape_intersect(&r, shapes, None) {
-        Some(intersect) => {
-            phong(&intersect, shapes, lights, r.direction() - r.origin)
-        },
+        Some(intersect) => phong(&intersect, shapes, lights, r.direction() - r.origin),
         None => background.color,
     }
 }

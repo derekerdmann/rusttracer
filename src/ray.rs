@@ -1,4 +1,4 @@
-use cgmath::{Vector3, InnerSpace};
+use cgmath::{InnerSpace, Vector3};
 
 // Individual ray that is fired through the scene
 // Direction is private because it must always be normalized

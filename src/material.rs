@@ -89,7 +89,6 @@ pub fn modulate(color: image::Rgb<u8>, amount: Vector3<f64>) -> image::Rgb<u8> {
 
 // Modulates a color by the specified vector
 pub fn modulate_scalar(color: image::Rgb<u8>, amount: f64) -> image::Rgb<u8> {
-
     image::Rgb([
         (color[0] as f64 * amount) as u8,
         (color[1] as f64 * amount) as u8,

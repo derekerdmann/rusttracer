@@ -1,5 +1,5 @@
-extern crate piston_window;
 extern crate image;
+extern crate piston_window;
 
 #[allow(unused_imports)]
 // this macro_use is only used in test modules
@@ -13,22 +13,23 @@ mod ray;
 mod material;
 mod light;
 
-use image::{Rgb, ConvertBuffer};
+use image::{ConvertBuffer, Rgb};
 use cgmath::vec3;
-use tracer::{Shape, Background};
+use tracer::{Background, Shape};
 use sphere::Sphere;
 use floor::Floor;
 use ray::Ray;
 use light::Light;
-use material::{SolidColorMaterial};
+use material::SolidColorMaterial;
 use std::rc::Rc;
 
 const IMAGE_PLANE: f64 = 0.5;
 
 
 fn main() {
-
-    let background = Background { color: Rgb([0, 175, 215]) };
+    let background = Background {
+        color: Rgb([0, 175, 215]),
+    };
 
     let sphere1 = Sphere {
         center: vec3(-0.75, -0.5, 2.25),
@@ -54,7 +55,10 @@ fn main() {
 
     let shapes: Vec<&Shape> = vec![&sphere1, &sphere2, &floor];
 
-    let light1 = Light { position: vec3(2.0, 3.0, -4.0), color: Rgb([255, 255, 255]) };
+    let light1 = Light {
+        position: vec3(2.0, 3.0, -4.0),
+        color: Rgb([255, 255, 255]),
+    };
 
     let lights: Vec<&Light> = vec![&light1];
 
@@ -68,7 +72,6 @@ fn main() {
 
     // Trace through the scene
     for (xpixel, ypixel, pixel) in image.enumerate_pixels_mut() {
-
         // enumerate_pixels_mut() iterates from top to bottom and left to right,
         // rather than bottom to top, left to right. Rather than reworking the
         // ray calculations, just figure out the pixel coordinates we actually
@@ -100,7 +103,6 @@ fn main() {
     // Event loop
     while let Some(e) = window.next() {
         window.draw_2d(&e, |c, g| {
-
             // Clear the screen
             piston_window::clear([0.0; 4], g);
 
