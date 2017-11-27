@@ -2,11 +2,22 @@ use cgmath::{Vector3, dot, InnerSpace};
 use tracer::{Shape, Intersect};
 use ray::Ray;
 use material::Material;
+use std::any::Any;
 
 pub struct Sphere {
     pub center: Vector3<f64>,
     pub r: f64,
     pub material: Box<Material>,
+}
+
+impl PartialEq for Sphere {
+    // Shapes really shouldn't be overlapping. If two different objects have the
+    // same coordinates and radius but different materials, we have a bigger
+    // problem.
+    fn eq(&self, other: &Sphere) -> bool {
+        ulps_eq!(self.center, other.center) && 
+        ulps_eq!(self.r, other.r)
+    }
 }
 
 impl Shape for Sphere {
@@ -58,9 +69,16 @@ impl Shape for Sphere {
                 point,
                 normal,
                 color: self.material.color(point),
+                shape: self
             })
         }
     }
+
+    fn eq(&self, other: &Shape) -> bool {
+         other.as_any().downcast_ref::<Self>().map_or(false, |x| x == self)
+    }
+
+    fn as_any(&self) -> &Any { self }
 }
 
 

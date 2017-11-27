@@ -5,6 +5,7 @@ use tracer::{Shape, Intersect};
 use ray::Ray;
 use material::Material;
 use std::rc::Rc;
+use std::any::Any;
 
 pub struct Floor {
     pub bottom_left: Vector3<f64>,
@@ -14,6 +15,20 @@ pub struct Floor {
     normal: Vector3<f64>,
     f: f64,
     pub material: Rc<Material>,
+}
+
+impl PartialEq for Floor {
+    // Shapes really shouldn't be overlapping. If two different objects have the
+    // same coordinates and dimensions but different materials, we have a bigger
+    // problem.
+    fn eq(&self, other: &Floor) -> bool {
+        ulps_eq!(self.bottom_left, other.bottom_left) && 
+        ulps_eq!(self.top_left, other.top_left) && 
+        ulps_eq!(self.top_right, other.top_right) && 
+        ulps_eq!(self.bottom_right, other.bottom_right) && 
+        ulps_eq!(self.normal, other.normal) && 
+        ulps_eq!(self.f, other.f)
+    }
 }
 
 impl Floor {
@@ -105,6 +120,7 @@ impl Shape for Floor {
                     point: intersect,
                     normal: self.normal,
                     color: self.material.color(intersect),
+                    shape: self
                 })
             } else {
                 None
@@ -114,6 +130,12 @@ impl Shape for Floor {
             None
         }
     }
+
+    fn eq(&self, other: &Shape) -> bool {
+         other.as_any().downcast_ref::<Self>().map_or(false, |x| x == self)
+    }
+
+    fn as_any(&self) -> &Any { self }
 }
 
 

@@ -1,12 +1,14 @@
-extern crate std;
 extern crate image;
+extern crate std;
 
-use cgmath::Vector3;
+use cgmath::{Vector3};
 use ray::Ray;
 use material::Color;
+use light::{Light, phong};
+use std::any::Any;
 
 // Represents the intersection of a Ray with an object
-pub struct Intersect {
+pub struct Intersect<'a> {
     // Distance from the origin where the intersect occurs
     pub distance: f64,
 
@@ -18,6 +20,9 @@ pub struct Intersect {
 
     // Color of the object where the intersect occurs
     pub color: Color,
+
+    // Shape that the ray intersects
+    pub shape: &'a Shape,
 }
 
 // Trait for objects that can be placed in the raytracer scene
@@ -25,6 +30,16 @@ pub trait Shape {
     // If the Ray intersects the shape, returns the distance from the Ray's
     // origin and the color at that point.
     fn intersect(&self, ray: &Ray) -> Option<Intersect>;
+
+    // Used to downcast and check equality
+    fn eq(&self, other: &Shape) -> bool;
+    fn as_any(&self) -> &Any;
+}
+
+impl<'a, 'b> PartialEq<Shape+'b> for Shape+'a {
+    fn eq(&self, other: &(Shape+'b)) -> bool {
+        Shape::eq(self, other)
+    }
 }
 
 
@@ -33,11 +48,14 @@ pub struct Background {
     pub color: image::Rgb<u8>,
 }
 
-// Of all shapes that intersect with this ray, select the closest one.
-fn shape_intersect(r: &Ray, shapes: &Vec<&Shape>) -> Option<Intersect> {
+// Of all shapes that intersect with this ray, select the closest one that's in
+// front of the starting point.
+pub fn shape_intersect<'a>(r: &Ray, shapes: &Vec<&'a Shape>, exclude: Option<&Shape>) -> Option<Intersect<'a>> {
     shapes
         .iter()
+        .filter(|&shape| exclude.map_or(true, |e| &e != shape)) 
         .filter_map(|&shape| shape.intersect(&r))
+        .filter(|intersect| intersect.distance >= 0.0 )
         .min_by(|first, second| {
             first.distance.partial_cmp(&second.distance).unwrap()
         })
@@ -45,9 +63,16 @@ fn shape_intersect(r: &Ray, shapes: &Vec<&Shape>) -> Option<Intersect> {
 
 // The main tracer function. Fires the ray into the scene, calculating the
 // objects it intersects and the final output color
-pub fn trace(r: Ray, shapes: &Vec<&Shape>, background: &Background) -> image::Rgb<u8> {
-    match shape_intersect(&r, shapes) {
-        Some(intersect) => intersect.color.diffuse(),
+pub fn trace(
+    r: Ray,
+    shapes: &Vec<&Shape>,
+    lights: &Vec<&Light>,
+    background: &Background,
+) -> image::Rgb<u8> {
+    match shape_intersect(&r, shapes, None) {
+        Some(intersect) => {
+            phong(&intersect, shapes, lights, r.direction() - r.origin)
+        },
         None => background.color,
     }
 }
@@ -61,7 +86,7 @@ mod tests {
     use std::rc::Rc;
     use cgmath::vec3;
     use ray::Ray;
-    use tracer::{Shape};
+    use tracer::Shape;
     use floor::Floor;
     use super::shape_intersect;
     use material::SolidColorMaterial;
@@ -69,7 +94,6 @@ mod tests {
     // Tests that the closest shape is selected
     #[test]
     fn intersect_ordering() {
-
         let color1 = image::Rgb([255, 0, 0]);
         let color2 = image::Rgb([0, 255, 0]);
 
@@ -93,7 +117,8 @@ mod tests {
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
 
-        let intersect = shape_intersect(&r, &shapes).expect("Both of these objects should intersect");
+        let intersect =
+            shape_intersect(&r, &shapes).expect("Both of these objects should intersect");
 
         assert_ulps_eq!(1.0, intersect.distance);
         assert_eq!(color1, intersect.color.diffuse());

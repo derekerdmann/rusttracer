@@ -11,6 +11,7 @@ mod sphere;
 mod floor;
 mod ray;
 mod material;
+mod light;
 
 use image::{Rgb, ConvertBuffer};
 use cgmath::vec3;
@@ -18,6 +19,7 @@ use tracer::{Shape, Background};
 use sphere::Sphere;
 use floor::Floor;
 use ray::Ray;
+use light::Light;
 use material::{SolidColorMaterial};
 use std::rc::Rc;
 
@@ -52,6 +54,10 @@ fn main() {
 
     let shapes: Vec<&Shape> = vec![&sphere1, &sphere2, &floor];
 
+    let light1 = Light { position: vec3(2.0, 3.0, -4.0), color: Rgb([255, 255, 255]) };
+
+    let lights: Vec<&Light> = vec![&light1];
+
     // Create the raw image buffer
     let mut image = image::RgbImage::from_pixel(640, 640, Rgb([255, 0, 0]));
 
@@ -74,7 +80,7 @@ fn main() {
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(x, y, IMAGE_PLANE));
 
-        *pixel = tracer::trace(r, &shapes, &background);
+        *pixel = tracer::trace(r, &shapes, &lights, &background);
     }
 
     // Set up the window for rendering
