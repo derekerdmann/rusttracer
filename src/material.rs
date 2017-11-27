@@ -5,6 +5,7 @@ use image::{Pixel};
 
 const AMBIENT_FACTOR: f64 = 0.3;
 const SPECULAR_COLOR: image::Rgb<u8> = image::Rgb { data: [255, 255, 255] };
+const SHININESS: f64 = 12.0; // not sure why I used this value in the original version
 
 
 // Color of a shape at a specific point. Includes the components needed for
@@ -36,6 +37,10 @@ impl Color {
 
     pub fn specular(&self) -> image::Rgb<u8> {
         self.specular
+    }
+
+    pub fn shininess(&self) -> f64 {
+        SHININESS
     }
 }
 
