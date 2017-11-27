@@ -10,6 +10,7 @@ mod tracer;
 mod sphere;
 mod floor;
 mod ray;
+mod material;
 
 use image::{Rgb, ConvertBuffer};
 use cgmath::vec3;
@@ -17,6 +18,8 @@ use tracer::{Shape, Background};
 use sphere::Sphere;
 use floor::Floor;
 use ray::Ray;
+use material::{SolidColorMaterial};
+use std::rc::Rc;
 
 const IMAGE_PLANE: f64 = 0.5;
 
@@ -28,13 +31,13 @@ fn main() {
     let sphere1 = Sphere {
         center: vec3(-0.75, -0.5, 2.25),
         r: 0.45,
-        color: Rgb([255, 255, 0]),
+        material: Box::new(SolidColorMaterial::new(Rgb([255, 255, 0]))),
     };
 
     let sphere2 = Sphere {
         center: vec3(0.0, 0.0, 1.5),
         r: 0.5,
-        color: Rgb([0, 225, 0]),
+        material: Box::new(SolidColorMaterial::new(Rgb([0, 225, 0]))),
     };
 
     let floor = Floor::new(
@@ -42,7 +45,7 @@ fn main() {
         vec3(-2.0, 2.0, 0.0),
         vec3(2.0, 2.0, 0.0),
         vec3(2.0, -2.0, 0.0),
-        Rgb([255, 0, 0]),
+        Rc::new(SolidColorMaterial::new(Rgb([255, 0, 0]))),
     );
     let floor = floor.rotate_x(75.0);
     let floor = floor.translate(vec3(-1.0, -1.25, 2.0));

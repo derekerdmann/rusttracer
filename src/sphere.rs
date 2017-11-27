@@ -1,12 +1,12 @@
 use cgmath::{Vector3, dot, InnerSpace};
-use image::Rgb;
 use tracer::{Shape, Intersect};
 use ray::Ray;
+use material::Material;
 
 pub struct Sphere {
     pub center: Vector3<f64>,
     pub r: f64,
-    pub color: Rgb<u8>,
+    pub material: Box<Material>,
 }
 
 impl Shape for Sphere {
@@ -57,7 +57,7 @@ impl Shape for Sphere {
                 distance,
                 point,
                 normal,
-                color: self.color,
+                color: self.material.color(point),
             })
         }
     }
@@ -67,27 +67,31 @@ impl Shape for Sphere {
 #[cfg(test)]
 mod tests {
 
+    extern crate image;
+
     use cgmath::vec3;
     use tracer::Shape;
     use sphere::Sphere;
     use ray::Ray;
-    use image::Rgb;
+    use material::SolidColorMaterial;
 
     // Tests collisions with a sphere, pointing at center
     #[test]
     fn intersect() {
 
+        let color = image::Rgb([255, 255, 0]);
+
         let sphere = Sphere {
             center: vec3(0.0, 0.0, 1.0),
             r: 0.5,
-            color: Rgb([255, 255, 0]),
+            material: Box::new(SolidColorMaterial::new(color)),
         };
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
         let intersect = sphere.intersect(&r).expect(
             "Ray should intersect with sphere",
         );
-        assert_eq!(sphere.color, intersect.color);
+        assert_eq!(color, intersect.color.diffuse());
         assert_ulps_eq!(0.5, intersect.distance);
     }
 
@@ -95,10 +99,12 @@ mod tests {
     #[test]
     fn intersect_tangent() {
 
+        let color = image::Rgb([255, 255, 0]);
+
         let sphere = Sphere {
             center: vec3(0.0, 0.0, 1.0),
             r: 0.5,
-            color: Rgb([255, 255, 0]),
+            material: Box::new(SolidColorMaterial::new(color)),
         };
 
         let r = Ray::new(vec3(0.0, 0.5, 0.0), vec3(0.0, 0.0, 1.0));
@@ -106,7 +112,7 @@ mod tests {
             "Ray should intersect with sphere at tangent",
         );
 
-        assert_eq!(sphere.color, intersect.color);
+        assert_eq!(color, intersect.color.diffuse());
         assert_ulps_eq!(1.0, intersect.distance);
     }
 }

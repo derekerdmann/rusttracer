@@ -3,6 +3,7 @@ extern crate image;
 
 use cgmath::Vector3;
 use ray::Ray;
+use material::Color;
 
 // Represents the intersection of a Ray with an object
 pub struct Intersect {
@@ -16,7 +17,7 @@ pub struct Intersect {
     pub normal: Vector3<f64>,
 
     // Color of the object where the intersect occurs
-    pub color: image::Rgb<u8>,
+    pub color: Color,
 }
 
 // Trait for objects that can be placed in the raytracer scene
@@ -46,7 +47,7 @@ fn shape_intersect(r: &Ray, shapes: &Vec<&Shape>) -> Option<Intersect> {
 // objects it intersects and the final output color
 pub fn trace(r: Ray, shapes: &Vec<&Shape>, background: &Background) -> image::Rgb<u8> {
     match shape_intersect(&r, shapes) {
-        Some(intersect) => intersect.color,
+        Some(intersect) => intersect.color.diffuse(),
         None => background.color,
     }
 }
@@ -55,44 +56,29 @@ pub fn trace(r: Ray, shapes: &Vec<&Shape>, background: &Background) -> image::Rg
 #[cfg(test)]
 mod tests {
 
-    use std;
-    use image::Rgb;
+    extern crate image;
+
+    use std::rc::Rc;
     use cgmath::vec3;
     use ray::Ray;
-    use tracer::{Shape, Background};
+    use tracer::{Shape};
     use floor::Floor;
     use super::shape_intersect;
-
-    // Tests that the background always intersects with any Ray
-    #[test]
-    fn background_always_intersects() {
-        let rays = [
-            Ray::new(vec3(0.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0)),
-            Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)),
-            Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0)),
-            Ray::new(vec3(0.0, 0.0, 0.0), vec3(-1.0, 0.0, 0.0)),
-            Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, -1.0, 0.0)),
-            Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, -1.0)),
-        ];
-
-        let bg = Background { color: Rgb([0, 175, 215]) };
-        for r in rays.iter() {
-            let intersect = bg.intersect(r).expect("Background must always intersect");
-            assert_eq!(bg.color, intersect.color);
-            assert_ulps_eq!(std::f64::INFINITY, intersect.distance);
-        }
-    }
+    use material::SolidColorMaterial;
 
     // Tests that the closest shape is selected
     #[test]
     fn intersect_ordering() {
+
+        let color1 = image::Rgb([255, 0, 0]);
+        let color2 = image::Rgb([0, 255, 0]);
 
         let f1 = Floor::new(
             vec3(-1.0, -1.0, 1.0),
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Rgb([255, 0, 0]),
+            Rc::new(SolidColorMaterial::new(color1)),
         );
 
         let f2 = Floor::new(
@@ -100,7 +86,7 @@ mod tests {
             vec3(-1.0, 1.0, 2.0),
             vec3(1.0, -1.0, 2.0),
             vec3(1.0, 1.0, 2.0),
-            Rgb([0, 255, 0]),
+            Rc::new(SolidColorMaterial::new(color2)),
         );
 
         let shapes: Vec<&Shape> = vec![&f1, &f2];
@@ -110,7 +96,7 @@ mod tests {
         let intersect = shape_intersect(&r, &shapes).expect("Both of these objects should intersect");
 
         assert_ulps_eq!(1.0, intersect.distance);
-        assert_eq!(f1.color, intersect.color);
+        assert_eq!(color1, intersect.color.diffuse());
     }
 
 }
