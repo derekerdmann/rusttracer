@@ -9,7 +9,7 @@ pub const AMBIENT_FACTOR: f64 = 0.3;
 const SPECULAR_COLOR: image::Rgb<u8> = image::Rgb {
     data: [255, 255, 255],
 };
-const SHININESS: f64 = 12.0; // not sure why I used this value in the original version
+const SHININESS: f64 = 16.0;
 
 
 // Color of a shape at a specific point. Includes the components needed for
@@ -70,7 +70,7 @@ impl SolidColorMaterial {
 }
 
 impl Material for SolidColorMaterial {
-    fn color(&self, point: Vector3<f64>) -> Color {
+    fn color(&self, _: Vector3<f64>) -> Color {
         self.color.clone()
     }
 }
