@@ -1,13 +1,21 @@
+extern crate image;
+
 use cgmath::{dot, InnerSpace, Vector3};
 use tracer::{Intersect, Shape};
 use ray::Ray;
-use material::Material;
 use std::any::Any;
+use material::Color;
 
 pub struct Sphere {
     pub center: Vector3<f64>,
     pub r: f64,
-    pub material: Box<Material>,
+    pub color: Color,
+}
+
+impl Sphere {
+    pub fn new(center: Vector3<f64>, r: f64, color: Color) -> Sphere {
+        Sphere { center, r, color }
+    }
 }
 
 impl PartialEq for Sphere {
@@ -65,7 +73,7 @@ impl Shape for Sphere {
                 distance,
                 point,
                 normal,
-                color: self.material.color(point),
+                color: &self.color,
                 shape: self,
             })
         }
@@ -93,18 +101,13 @@ mod tests {
     use tracer::Shape;
     use sphere::Sphere;
     use ray::Ray;
-    use material::SolidColorMaterial;
 
     // Tests collisions with a sphere, pointing at center
     #[test]
     fn intersect() {
         let color = image::Rgb([255, 255, 0]);
 
-        let sphere = Sphere {
-            center: vec3(0.0, 0.0, 1.0),
-            r: 0.5,
-            material: Box::new(SolidColorMaterial::new(color)),
-        };
+        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, color);
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
         let intersect = sphere
@@ -119,11 +122,7 @@ mod tests {
     fn intersect_tangent() {
         let color = image::Rgb([255, 255, 0]);
 
-        let sphere = Sphere {
-            center: vec3(0.0, 0.0, 1.0),
-            r: 0.5,
-            material: Box::new(SolidColorMaterial::new(color)),
-        };
+        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, color);
 
         let r = Ray::new(vec3(0.0, 0.5, 0.0), vec3(0.0, 0.0, 1.0));
         let intersect = sphere

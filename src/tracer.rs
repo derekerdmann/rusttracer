@@ -19,7 +19,7 @@ pub struct Intersect<'a> {
     pub normal: Vector3<f64>,
 
     // Color of the object where the intersect occurs
-    pub color: Color,
+    pub color: &'a Color,
 
     // Shape that the ray intersects
     pub shape: &'a Shape,

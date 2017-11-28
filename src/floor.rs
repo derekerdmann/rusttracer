@@ -1,11 +1,11 @@
+extern crate image;
 extern crate std;
 
 use cgmath::{dot, InnerSpace, Vector3};
 use tracer::{Intersect, Shape};
 use ray::Ray;
-use material::Material;
-use std::rc::Rc;
 use std::any::Any;
+use material::Color;
 
 pub struct Floor {
     pub bottom_left: Vector3<f64>,
@@ -14,7 +14,7 @@ pub struct Floor {
     pub bottom_right: Vector3<f64>,
     normal: Vector3<f64>,
     f: f64,
-    pub material: Rc<Material>,
+    pub color: Color,
 }
 
 impl PartialEq for Floor {
@@ -35,7 +35,7 @@ impl Floor {
         top_left: Vector3<f64>,
         top_right: Vector3<f64>,
         bottom_right: Vector3<f64>,
-        material: Rc<Material>,
+        color: Color,
     ) -> Floor {
         // Given 3 of the corners, calculate the normal and F
         let a = bottom_left - top_left;
@@ -54,7 +54,7 @@ impl Floor {
             bottom_right,
             normal,
             f: -dot(normal, bottom_left),
-            material,
+            color,
         }
     }
 
@@ -65,7 +65,7 @@ impl Floor {
             self.top_left + translation,
             self.top_right + translation,
             self.bottom_right + translation,
-            Rc::clone(&self.material),
+            self.color.clone(),
         )
     }
 
@@ -87,7 +87,7 @@ impl Floor {
             rotate_x(self.top_left, rotation),
             rotate_x(self.top_right, rotation),
             rotate_x(self.bottom_right, rotation),
-            Rc::clone(&self.material),
+            self.color.clone(),
         )
     }
 }
@@ -110,7 +110,7 @@ impl Shape for Floor {
                     distance,
                     point: intersect,
                     normal: self.normal,
-                    color: self.material.color(intersect),
+                    color: &self.color,
                     shape: self,
                 })
             } else {
@@ -144,7 +144,6 @@ mod tests {
     use tracer::Shape;
     use floor::Floor;
     use ray::Ray;
-    use material::SolidColorMaterial;
 
     // Tests collisions with a simple floor that hasn't been rotated or
     // translated
@@ -157,7 +156,7 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Rc::new(SolidColorMaterial::new(color)),
+            color,
         );
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
@@ -188,7 +187,7 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Rc::new(SolidColorMaterial::new(color)),
+            color,
         );
 
         let floor = floor.translate(vec3(1.0, 2.0, 3.0));
@@ -224,7 +223,7 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Rc::new(SolidColorMaterial::new(color)),
+            color,
         );
 
         let floor = floor.rotate_x(-90.0);

@@ -1,6 +1,5 @@
 extern crate image;
 
-use cgmath::Vector3;
 use image::Pixel;
 use std::cmp;
 use std::u8;
@@ -47,33 +46,6 @@ impl Color {
     }
 }
 
-
-// Types for the color and surface of individual shapes
-pub trait Material {
-    // Returns the color at a particular point on the shape
-    fn color(&self, point: Vector3<f64>) -> Color;
-}
-
-
-// Shape material that uses a single solid color at all points
-#[derive(PartialEq, Eq, Debug)]
-pub struct SolidColorMaterial {
-    color: Color,
-}
-
-impl SolidColorMaterial {
-    pub fn new(color: image::Rgb<u8>) -> SolidColorMaterial {
-        SolidColorMaterial {
-            color: Color::new(color),
-        }
-    }
-}
-
-impl Material for SolidColorMaterial {
-    fn color(&self, _: Vector3<f64>) -> Color {
-        self.color.clone()
-    }
-}
 
 // Modulates a color by the specified vector
 pub fn modulate_scalar(color: image::Rgb<u8>, amount: f64) -> image::Rgb<u8> {
