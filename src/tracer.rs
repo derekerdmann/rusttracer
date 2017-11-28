@@ -108,6 +108,7 @@ mod tests {
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
             Color::new(color1),
+            Color::new(color1),
         );
 
         let f2 = Floor::new(
@@ -115,6 +116,7 @@ mod tests {
             vec3(-1.0, 1.0, 2.0),
             vec3(1.0, -1.0, 2.0),
             vec3(1.0, 1.0, 2.0),
+            Color::new(color2),
             Color::new(color2),
         );
 
@@ -126,7 +128,6 @@ mod tests {
             shape_intersect(&r, &shapes, None).expect("Both of these objects should intersect");
 
         assert_ulps_eq!(1.0, intersect.distance);
-        assert_eq!(color1, intersect.color.diffuse());
     }
 
     // Tests that a shape is excluded if specified
@@ -141,6 +142,7 @@ mod tests {
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
             Color::new(color1),
+            Color::new(color1),
         );
 
         let f2 = Floor::new(
@@ -148,6 +150,7 @@ mod tests {
             vec3(-1.0, 1.0, 2.0),
             vec3(1.0, -1.0, 2.0),
             vec3(1.0, 1.0, 2.0),
+            Color::new(color2),
             Color::new(color2),
         );
 
