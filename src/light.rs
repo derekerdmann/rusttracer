@@ -138,19 +138,24 @@ pub struct Light {
 
 // Color of a shape at a specific point. Includes the components needed for
 // phong shading, automatically derived from the primary color.
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct Color {
+#[derive(Clone, PartialEq, Debug)]
+pub struct Material {
+    // Phong colors
     ambient: Rgb,
     diffuse: Rgb,
     specular: Rgb,
+    
+    // Ray tracing reflection constant, k_r
+    shine: f64,
 }
 
-impl Color {
-    pub fn new(color: Rgb) -> Color {
-        Color {
+impl Material {
+    pub fn new(color: Rgb, shine: f64) -> Material {
+        Material {
             ambient: &color * AMBIENT_FACTOR,
             diffuse: color,
             specular: SPECULAR_COLOR,
+            shine
         }
     }
 
@@ -166,8 +171,12 @@ impl Color {
         &self.specular
     }
 
-    pub fn shininess(&self) -> f64 {
+    pub fn specular_exponent(&self) -> f64 {
         SHININESS
+    }
+
+    pub fn reflection_constant(&self) -> f64 {
+        self.shine
     }
 }
 
@@ -206,7 +215,7 @@ pub fn phong(
                 let result = if specular_dot > 0.0 {
                     result
                         + ((intersect.color.specular() * &light.color)
-                            * specular_dot.powf(intersect.color.shininess()))
+                            * specular_dot.powf(intersect.color.specular_exponent()))
                 } else {
                     result
                 };

@@ -1,9 +1,11 @@
 extern crate std;
 
-use cgmath::{InnerSpace, Vector3};
+use cgmath::{dot, InnerSpace, Vector3};
 use ray::Ray;
-use light::{phong, Color, Light, Rgb};
+use light::{phong, Light, Material, Rgb};
 use std::any::Any;
+
+const MAX_DEPTH: u8 = 5;
 
 // Represents the intersection of a Ray with an object
 pub struct Intersect<'a> {
@@ -16,8 +18,8 @@ pub struct Intersect<'a> {
     // Normal vector from the surface of the shape at this intersect
     pub normal: Vector3<f64>,
 
-    // Color of the object where the intersect occurs
-    pub color: &'a Color,
+    // Material of the object where the intersect occurs
+    pub color: &'a Material,
 
     // Shape that the ray intersects
     pub shape: &'a Shape,
@@ -65,14 +67,48 @@ pub fn shape_intersect<'a>(
 
 // The main tracer function. Fires the ray into the scene, calculating the
 // objects it intersects and the final output color
-pub fn illuminate(r: Ray, shapes: &Vec<&Shape>, lights: &Vec<&Light>, background: &Background) -> Rgb {
-    match shape_intersect(&r, shapes, None) {
-        Some(intersect) => phong(
-            &intersect,
-            shapes,
-            lights,
-            (r.direction() - r.origin).normalize(),
-        ),
+pub fn illuminate(
+    r: Ray,
+    shapes: &Vec<&Shape>,
+    lights: &Vec<&Light>,
+    background: &Background,
+    last_shape: Option<&Shape>,
+    depth: u8,
+) -> Rgb {
+    match shape_intersect(&r, shapes, last_shape) {
+        Some(intersect) => {
+            let local = phong(
+                &intersect,
+                shapes,
+                lights,
+                (r.direction() - r.origin).normalize(),
+            );
+
+            let i = intersect.point;
+            let n = intersect.normal;
+            let k_r = intersect.color.reflection_constant();
+
+            if depth < MAX_DEPTH {
+                if k_r > 0.0 {
+                    let reflection = Ray::new(intersect.point, i - 2.0 * (n * dot(i, n)));
+
+                    let global_illumination = illuminate(
+                        reflection,
+                        shapes,
+                        lights,
+                        background,
+                        Some(intersect.shape),
+                        depth + 1,
+                    );
+
+                    local + (global_illumination * k_r)
+                } else {
+                    local
+                }
+            } else {
+                local
+            }
+        }
         None => background.color.clone(),
     }
 }
@@ -85,7 +121,7 @@ mod tests {
     use ray::Ray;
     use tracer::Shape;
     use floor::Floor;
-    use light::{Color, Rgb};
+    use light::{Material, Rgb};
     use super::shape_intersect;
 
     // Tests that the closest shape is selected
@@ -99,8 +135,8 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Color::new(color1.clone()),
-            Color::new(color1.clone()),
+            Material::new(color1.clone(), 0.0),
+            Material::new(color1.clone(), 0.0),
         );
 
         let f2 = Floor::new(
@@ -108,8 +144,8 @@ mod tests {
             vec3(-1.0, 1.0, 2.0),
             vec3(1.0, -1.0, 2.0),
             vec3(1.0, 1.0, 2.0),
-            Color::new(color2.clone()),
-            Color::new(color2.clone()),
+            Material::new(color2.clone(), 0.0),
+            Material::new(color2.clone(), 0.0),
         );
 
         let shapes: Vec<&Shape> = vec![&f1, &f2];
@@ -133,8 +169,8 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Color::new(color1.clone()),
-            Color::new(color1.clone()),
+            Material::new(color1.clone(), 0.0),
+            Material::new(color1.clone(), 0.0),
         );
 
         let f2 = Floor::new(
@@ -142,8 +178,8 @@ mod tests {
             vec3(-1.0, 1.0, 2.0),
             vec3(1.0, -1.0, 2.0),
             vec3(1.0, 1.0, 2.0),
-            Color::new(color2.clone()),
-            Color::new(color2.clone()),
+            Material::new(color2.clone(), 0.0),
+            Material::new(color2.clone(), 0.0),
         );
 
         let shapes: Vec<&Shape> = vec![&f1, &f2];

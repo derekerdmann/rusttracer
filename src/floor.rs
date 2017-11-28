@@ -4,7 +4,7 @@ use cgmath::{dot, Angle, InnerSpace, Vector3};
 use tracer::{Intersect, Shape};
 use ray::Ray;
 use std::any::Any;
-use light::Color;
+use light::Material;
 
 const SUBDIVISIONS_X: f64 = 7.0;
 const SUBDIVISIONS_Y: f64 = 7.0;
@@ -18,8 +18,8 @@ pub struct Floor {
     f: f64,
     width: f64,
     height: f64,
-    pub color1: Color,
-    pub color2: Color,
+    pub color1: Material,
+    pub color2: Material,
 }
 
 impl Floor {
@@ -28,8 +28,8 @@ impl Floor {
         top_left: Vector3<f64>,
         top_right: Vector3<f64>,
         bottom_right: Vector3<f64>,
-        color1: Color,
-        color2: Color,
+        color1: Material,
+        color2: Material,
     ) -> Floor {
         // Given 3 of the corners, calculate the normal and F
         let a = bottom_left - top_left;
@@ -94,7 +94,7 @@ impl Floor {
     }
 
     // Calculates the correct color at a specific intersect
-    fn color_at(&self, intersect: &Vector3<f64>) -> &Color {
+    fn color_at(&self, intersect: &Vector3<f64>) -> &Material {
         let hyp = intersect - self.bottom_left;
         let hyp_length = hyp.magnitude();
         let angle = (self.bottom_right - self.bottom_left).angle(hyp);
@@ -175,7 +175,7 @@ mod tests {
     use tracer::Shape;
     use floor::Floor;
     use ray::Ray;
-    use light::{Color, Rgb};
+    use light::{Material, Rgb};
 
     // Tests collisions with a simple floor that hasn't been rotated or
     // translated
@@ -188,8 +188,8 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Color::new(color.clone()),
-            Color::new(color.clone()),
+            Material::new(color.clone(), 0.0),
+            Material::new(color.clone(), 0.0),
         );
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
@@ -220,8 +220,8 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Color::new(color.clone()),
-            Color::new(color.clone()),
+            Material::new(color.clone(), 0.0),
+            Material::new(color.clone(), 0.0),
         );
 
         let floor = floor.translate(vec3(1.0, 2.0, 3.0));
@@ -257,8 +257,8 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Color::new(color.clone()),
-            Color::new(color.clone()),
+            Material::new(color.clone(), 0.0),
+            Material::new(color.clone(), 0.0),
         );
 
         let floor = floor.rotate_x(-90.0);

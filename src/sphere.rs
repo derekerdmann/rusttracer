@@ -2,16 +2,16 @@ use cgmath::{dot, InnerSpace, Vector3};
 use tracer::{Intersect, Shape};
 use ray::Ray;
 use std::any::Any;
-use light::Color;
+use light::Material;
 
 pub struct Sphere {
     pub center: Vector3<f64>,
     pub r: f64,
-    pub color: Color,
+    pub color: Material,
 }
 
 impl Sphere {
-    pub fn new(center: Vector3<f64>, r: f64, color: Color) -> Sphere {
+    pub fn new(center: Vector3<f64>, r: f64, color: Material) -> Sphere {
         Sphere { center, r, color }
     }
 }
@@ -97,14 +97,14 @@ mod tests {
     use tracer::Shape;
     use sphere::Sphere;
     use ray::Ray;
-    use light::{Color, Rgb};
+    use light::{Material, Rgb};
 
     // Tests collisions with a sphere, pointing at center
     #[test]
     fn intersect() {
         let color = Rgb::new([255, 255, 0]);
 
-        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Color::new(color.clone()));
+        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Material::new(color.clone(), 0.0));
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
         let intersect = sphere
@@ -119,7 +119,7 @@ mod tests {
     fn intersect_tangent() {
         let color = Rgb::new([255, 255, 0]);
 
-        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Color::new(color.clone()));
+        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Material::new(color.clone(), 0.0));
 
         let r = Ray::new(vec3(0.0, 0.5, 0.0), vec3(0.0, 0.0, 1.0));
         let intersect = sphere
