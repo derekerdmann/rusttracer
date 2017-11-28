@@ -170,7 +170,6 @@ mod tests {
         let shapes: Vec<&Shape> = vec![&f1];
         let intersect = shape_intersect(&r, &shapes, Some(&f1));
         assert!(intersect.is_none());
-
     }
 
 }
