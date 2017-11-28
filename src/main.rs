@@ -74,7 +74,7 @@ fn main() {
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(x, y, IMAGE_PLANE));
 
-        *pixel = tracer::trace(r, &shapes, &lights, &background).color;
+        *pixel = tracer::illuminate(r, &shapes, &lights, &background).color;
     }
 
     // Set up the window for rendering

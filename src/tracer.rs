@@ -65,7 +65,7 @@ pub fn shape_intersect<'a>(
 
 // The main tracer function. Fires the ray into the scene, calculating the
 // objects it intersects and the final output color
-pub fn trace(r: Ray, shapes: &Vec<&Shape>, lights: &Vec<&Light>, background: &Background) -> Rgb {
+pub fn illuminate(r: Ray, shapes: &Vec<&Shape>, lights: &Vec<&Light>, background: &Background) -> Rgb {
     match shape_intersect(&r, shapes, None) {
         Some(intersect) => phong(
             &intersect,
