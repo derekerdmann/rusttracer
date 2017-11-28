@@ -5,7 +5,7 @@ use cgmath::{dot, InnerSpace, Vector3};
 use tracer::{Intersect, Shape};
 use ray::Ray;
 use std::any::Any;
-use material::Color;
+use light::Color;
 
 pub struct Floor {
     pub bottom_left: Vector3<f64>,
@@ -139,11 +139,11 @@ mod tests {
 
     extern crate image;
 
-    use std::rc::Rc;
     use cgmath::vec3;
     use tracer::Shape;
     use floor::Floor;
     use ray::Ray;
+    use light::Color;
 
     // Tests collisions with a simple floor that hasn't been rotated or
     // translated
@@ -156,7 +156,7 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            color,
+            Color::new(color),
         );
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
@@ -187,7 +187,7 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            color,
+            Color::new(color),
         );
 
         let floor = floor.translate(vec3(1.0, 2.0, 3.0));
@@ -223,7 +223,7 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            color,
+            Color::new(color),
         );
 
         let floor = floor.rotate_x(-90.0);

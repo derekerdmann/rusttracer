@@ -3,8 +3,7 @@ extern crate std;
 
 use cgmath::{InnerSpace, Vector3};
 use ray::Ray;
-use material::Color;
-use light::{phong, Light};
+use light::{phong, Color, Light};
 use std::any::Any;
 
 // Represents the intersection of a Ray with an object
@@ -90,13 +89,12 @@ mod tests {
 
     extern crate image;
 
-    use std::rc::Rc;
     use cgmath::vec3;
     use ray::Ray;
     use tracer::Shape;
     use floor::Floor;
+    use light::Color;
     use super::shape_intersect;
-    use material::SolidColorMaterial;
 
     // Tests that the closest shape is selected
     #[test]
@@ -109,7 +107,7 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Rc::new(SolidColorMaterial::new(color1)),
+            Color::new(color1),
         );
 
         let f2 = Floor::new(
@@ -117,7 +115,7 @@ mod tests {
             vec3(-1.0, 1.0, 2.0),
             vec3(1.0, -1.0, 2.0),
             vec3(1.0, 1.0, 2.0),
-            Rc::new(SolidColorMaterial::new(color2)),
+            Color::new(color2),
         );
 
         let shapes: Vec<&Shape> = vec![&f1, &f2];
@@ -125,10 +123,51 @@ mod tests {
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
 
         let intersect =
-            shape_intersect(&r, &shapes).expect("Both of these objects should intersect");
+            shape_intersect(&r, &shapes, None).expect("Both of these objects should intersect");
 
         assert_ulps_eq!(1.0, intersect.distance);
         assert_eq!(color1, intersect.color.diffuse());
+    }
+
+    // Tests that a shape is excluded if specified
+    #[test]
+    fn intersect_exclude() {
+        let color1 = image::Rgb([255, 0, 0]);
+        let color2 = image::Rgb([0, 255, 0]);
+
+        let f1 = Floor::new(
+            vec3(-1.0, -1.0, 1.0),
+            vec3(-1.0, 1.0, 1.0),
+            vec3(1.0, -1.0, 1.0),
+            vec3(1.0, 1.0, 1.0),
+            Color::new(color1),
+        );
+
+        let f2 = Floor::new(
+            vec3(-1.0, -1.0, 2.0),
+            vec3(-1.0, 1.0, 2.0),
+            vec3(1.0, -1.0, 2.0),
+            vec3(1.0, 1.0, 2.0),
+            Color::new(color2),
+        );
+
+        let shapes: Vec<&Shape> = vec![&f1, &f2];
+
+        let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
+
+        // Exclude a shape that already isn't closest
+        let intersect = shape_intersect(&r, &shapes, Some(&f2)).expect("f1 should intersect");
+        assert_ulps_eq!(1.0, intersect.distance);
+
+        // Exclude the closest shape
+        let intersect = shape_intersect(&r, &shapes, Some(&f1)).expect("f2 should intersect");
+        assert_ulps_eq!(2.0, intersect.distance);
+
+        // Exclude the only shape
+        let shapes: Vec<&Shape> = vec![&f1];
+        let intersect = shape_intersect(&r, &shapes, Some(&f1));
+        assert!(intersect.is_none());
+
     }
 
 }

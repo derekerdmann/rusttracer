@@ -4,7 +4,7 @@ use cgmath::{dot, InnerSpace, Vector3};
 use tracer::{Intersect, Shape};
 use ray::Ray;
 use std::any::Any;
-use material::Color;
+use light::Color;
 
 pub struct Sphere {
     pub center: Vector3<f64>,
@@ -101,13 +101,14 @@ mod tests {
     use tracer::Shape;
     use sphere::Sphere;
     use ray::Ray;
+    use light::Color;
 
     // Tests collisions with a sphere, pointing at center
     #[test]
     fn intersect() {
         let color = image::Rgb([255, 255, 0]);
 
-        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, color);
+        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Color::new(color));
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
         let intersect = sphere
@@ -122,7 +123,7 @@ mod tests {
     fn intersect_tangent() {
         let color = image::Rgb([255, 255, 0]);
 
-        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, color);
+        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Color::new(color));
 
         let r = Ray::new(vec3(0.0, 0.5, 0.0), vec3(0.0, 0.0, 1.0));
         let intersect = sphere

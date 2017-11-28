@@ -10,7 +10,6 @@ mod tracer;
 mod sphere;
 mod floor;
 mod ray;
-mod material;
 mod light;
 
 use image::{ConvertBuffer, Rgb};
@@ -19,8 +18,7 @@ use tracer::{Background, Shape};
 use sphere::Sphere;
 use floor::Floor;
 use ray::Ray;
-use light::Light;
-use material::Color;
+use light::{Color, Light};
 
 const IMAGE_PLANE: f64 = 0.5;
 
