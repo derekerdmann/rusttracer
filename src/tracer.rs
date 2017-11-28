@@ -1,4 +1,3 @@
-extern crate image;
 extern crate std;
 
 use cgmath::{InnerSpace, Vector3};
@@ -81,8 +80,6 @@ pub fn trace(r: Ray, shapes: &Vec<&Shape>, lights: &Vec<&Light>, background: &Ba
 
 #[cfg(test)]
 mod tests {
-
-    extern crate image;
 
     use cgmath::vec3;
     use ray::Ray;

@@ -1,4 +1,3 @@
-extern crate image;
 extern crate std;
 
 use cgmath::{dot, Angle, InnerSpace, Vector3};

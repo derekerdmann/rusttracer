@@ -1,5 +1,3 @@
-extern crate image;
-
 use cgmath::{dot, InnerSpace, Vector3};
 use tracer::{Intersect, Shape};
 use ray::Ray;
