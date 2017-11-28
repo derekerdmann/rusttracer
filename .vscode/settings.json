@@ -1,7 +1,8 @@
 {
     "files.exclude": {
         "**/*.rs.bk": true,
-        "target": true,
+        "target": true
     },
-    "rust.cfg_test": true
+    "rust.cfg_test": true,
+    "rust-client.channel": "stable"
 }
