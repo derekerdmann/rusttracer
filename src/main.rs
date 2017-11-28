@@ -15,35 +15,31 @@ use tracer::{Background, Shape};
 use sphere::Sphere;
 use floor::Floor;
 use ray::Ray;
-use light::{Color, Light};
+use light::{Color, Light, Rgb};
 
 const IMAGE_PLANE: f64 = 0.5;
 
 
 fn main() {
     let background = Background {
-        color: image::Rgb([0, 175, 215]),
+        color: Rgb::new([0, 175, 215]),
     };
 
     let sphere1 = Sphere::new(
         vec3(-0.87, -0.5, 2.25),
         0.45,
-        Color::new(image::Rgb([0, 255, 0])),
+        Color::new(Rgb::new([0, 255, 0])),
     );
 
-    let sphere2 = Sphere::new(
-        vec3(0.0, 0.0, 1.5),
-        0.5,
-        Color::new(image::Rgb([0, 0, 255])),
-    );
+    let sphere2 = Sphere::new(vec3(0.0, 0.0, 1.5), 0.5, Color::new(Rgb::new([0, 0, 255])));
 
     let floor = Floor::new(
         vec3(-2.0, -2.0, 0.0),
         vec3(-2.0, 2.0, 0.0),
         vec3(2.0, 2.0, 0.0),
         vec3(2.0, -2.0, 0.0),
-        Color::new(image::Rgb([255, 0, 0])),
-        Color::new(image::Rgb([255, 255, 0])),
+        Color::new(Rgb::new([255, 0, 0])),
+        Color::new(Rgb::new([255, 255, 0])),
     );
     let floor = floor.rotate_x(75.0);
     let floor = floor.translate(vec3(-1.0, -1.25, 2.0));
@@ -52,7 +48,7 @@ fn main() {
 
     let light1 = Light {
         position: vec3(2.0, 3.0, -4.0),
-        color: image::Rgb([255, 255, 255]),
+        color: Rgb::new([255, 255, 255]),
     };
 
     let lights: Vec<&Light> = vec![&light1];
@@ -78,7 +74,7 @@ fn main() {
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(x, y, IMAGE_PLANE));
 
-        *pixel = tracer::trace(r, &shapes, &lights, &background);
+        *pixel = tracer::trace(r, &shapes, &lights, &background).color;
     }
 
     // Set up the window for rendering

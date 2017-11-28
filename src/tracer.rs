@@ -3,7 +3,7 @@ extern crate std;
 
 use cgmath::{InnerSpace, Vector3};
 use ray::Ray;
-use light::{phong, Color, Light};
+use light::{phong, Color, Light, Rgb};
 use std::any::Any;
 
 // Represents the intersection of a Ray with an object
@@ -44,7 +44,7 @@ impl<'a, 'b> PartialEq<Shape + 'b> for Shape + 'a {
 
 // Objects that can be placed in a scene
 pub struct Background {
-    pub color: image::Rgb<u8>,
+    pub color: Rgb,
 }
 
 // Of all shapes that intersect with this ray, select the closest one that's in
@@ -66,12 +66,7 @@ pub fn shape_intersect<'a>(
 
 // The main tracer function. Fires the ray into the scene, calculating the
 // objects it intersects and the final output color
-pub fn trace(
-    r: Ray,
-    shapes: &Vec<&Shape>,
-    lights: &Vec<&Light>,
-    background: &Background,
-) -> image::Rgb<u8> {
+pub fn trace(r: Ray, shapes: &Vec<&Shape>, lights: &Vec<&Light>, background: &Background) -> Rgb {
     match shape_intersect(&r, shapes, None) {
         Some(intersect) => phong(
             &intersect,
@@ -79,7 +74,7 @@ pub fn trace(
             lights,
             (r.direction() - r.origin).normalize(),
         ),
-        None => background.color,
+        None => background.color.clone(),
     }
 }
 
@@ -93,22 +88,22 @@ mod tests {
     use ray::Ray;
     use tracer::Shape;
     use floor::Floor;
-    use light::Color;
+    use light::{Color, Rgb};
     use super::shape_intersect;
 
     // Tests that the closest shape is selected
     #[test]
     fn intersect_ordering() {
-        let color1 = image::Rgb([255, 0, 0]);
-        let color2 = image::Rgb([0, 255, 0]);
+        let color1 = Rgb::new([255, 0, 0]);
+        let color2 = Rgb::new([0, 255, 0]);
 
         let f1 = Floor::new(
             vec3(-1.0, -1.0, 1.0),
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Color::new(color1),
-            Color::new(color1),
+            Color::new(color1.clone()),
+            Color::new(color1.clone()),
         );
 
         let f2 = Floor::new(
@@ -116,8 +111,8 @@ mod tests {
             vec3(-1.0, 1.0, 2.0),
             vec3(1.0, -1.0, 2.0),
             vec3(1.0, 1.0, 2.0),
-            Color::new(color2),
-            Color::new(color2),
+            Color::new(color2.clone()),
+            Color::new(color2.clone()),
         );
 
         let shapes: Vec<&Shape> = vec![&f1, &f2];
@@ -133,16 +128,16 @@ mod tests {
     // Tests that a shape is excluded if specified
     #[test]
     fn intersect_exclude() {
-        let color1 = image::Rgb([255, 0, 0]);
-        let color2 = image::Rgb([0, 255, 0]);
+        let color1 = Rgb::new([255, 0, 0]);
+        let color2 = Rgb::new([0, 255, 0]);
 
         let f1 = Floor::new(
             vec3(-1.0, -1.0, 1.0),
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Color::new(color1),
-            Color::new(color1),
+            Color::new(color1.clone()),
+            Color::new(color1.clone()),
         );
 
         let f2 = Floor::new(
@@ -150,8 +145,8 @@ mod tests {
             vec3(-1.0, 1.0, 2.0),
             vec3(1.0, -1.0, 2.0),
             vec3(1.0, 1.0, 2.0),
-            Color::new(color2),
-            Color::new(color2),
+            Color::new(color2.clone()),
+            Color::new(color2.clone()),
         );
 
         let shapes: Vec<&Shape> = vec![&f1, &f2];

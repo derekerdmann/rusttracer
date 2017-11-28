@@ -95,42 +95,40 @@ impl Shape for Sphere {
 #[cfg(test)]
 mod tests {
 
-    extern crate image;
-
     use cgmath::vec3;
     use tracer::Shape;
     use sphere::Sphere;
     use ray::Ray;
-    use light::Color;
+    use light::{Color, Rgb};
 
     // Tests collisions with a sphere, pointing at center
     #[test]
     fn intersect() {
-        let color = image::Rgb([255, 255, 0]);
+        let color = Rgb::new([255, 255, 0]);
 
-        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Color::new(color));
+        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Color::new(color.clone()));
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
         let intersect = sphere
             .intersect(&r)
             .expect("Ray should intersect with sphere");
-        assert_eq!(color, intersect.color.diffuse());
+        assert_eq!(&color, intersect.color.diffuse());
         assert_ulps_eq!(0.5, intersect.distance);
     }
 
 
     #[test]
     fn intersect_tangent() {
-        let color = image::Rgb([255, 255, 0]);
+        let color = Rgb::new([255, 255, 0]);
 
-        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Color::new(color));
+        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Color::new(color.clone()));
 
         let r = Ray::new(vec3(0.0, 0.5, 0.0), vec3(0.0, 0.0, 1.0));
         let intersect = sphere
             .intersect(&r)
             .expect("Ray should intersect with sphere at tangent");
 
-        assert_eq!(color, intersect.color.diffuse());
+        assert_eq!(&color, intersect.color.diffuse());
         assert_ulps_eq!(1.0, intersect.distance);
     }
 }
