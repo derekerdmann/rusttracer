@@ -28,13 +28,19 @@ fn main() {
     let sphere1 = Sphere::new(
         vec3(-0.87, -0.5, 2.25),
         0.45,
-        Material::new(Rgb::new([61, 161, 1]), 0.99),
+        Material::new(Rgb::new([61, 161, 1]), (0.15, 0.25, 1.0), 0.99, 0.0, 0.0),
     );
 
     let sphere2 = Sphere::new(
         vec3(0.0, 0.0, 1.5),
         0.5,
-        Material::new(Rgb::new([0, 0, 255]), 0.0),
+        Material::new(
+            Rgb::new([255, 255, 255]),
+            (0.075, 0.075, 0.2),
+            0.01,
+            0.85,
+            0.95,
+        ),
     );
 
     let floor = Floor::new(
@@ -42,8 +48,8 @@ fn main() {
         vec3(-2.0, 2.0, 0.0),
         vec3(2.0, 2.0, 0.0),
         vec3(2.0, -2.0, 0.0),
-        Material::new(Rgb::new([255, 0, 0]), 0.0),
-        Material::new(Rgb::new([255, 255, 0]), 0.0),
+        Material::new(Rgb::new([255, 0, 0]), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
+        Material::new(Rgb::new([255, 255, 0]), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
     );
     let floor = floor.rotate_x(75.0);
     let floor = floor.translate(vec3(-1.0, -1.25, 2.0));

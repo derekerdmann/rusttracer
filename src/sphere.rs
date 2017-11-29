@@ -104,7 +104,7 @@ mod tests {
     fn intersect() {
         let color = Rgb::new([255, 255, 0]);
 
-        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Material::new(color.clone(), 0.0));
+        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Material::new(color.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0));
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
         let intersect = sphere
@@ -119,7 +119,7 @@ mod tests {
     fn intersect_tangent() {
         let color = Rgb::new([255, 255, 0]);
 
-        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Material::new(color.clone(), 0.0));
+        let sphere = Sphere::new(vec3(0.0, 0.0, 1.0), 0.5, Material::new(color.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0));
 
         let r = Ray::new(vec3(0.0, 0.5, 0.0), vec3(0.0, 0.0, 1.0));
         let intersect = sphere

@@ -144,18 +144,33 @@ pub struct Material {
     ambient: Rgb,
     diffuse: Rgb,
     specular: Rgb,
-    
+
+    // Phong constants
+    k_a: f64,
+    k_d: f64,
+    k_s: f64,
+
     // Ray tracing reflection constant, k_r
-    shine: f64,
+    reflection: f64,
+
+    // Ray tracing transmission constant, k_t
+    transmission: f64,
+
+    // Refraction index of the material
+    refraction_index: f64,
 }
 
 impl Material {
-    pub fn new(color: Rgb, shine: f64) -> Material {
+    pub fn new(color: Rgb, phong_constants: (f64, f64, f64), reflection: f64, transmission: f64, refraction_index: f64) -> Material {
+        let (k_a, k_d, k_s) = phong_constants;
         Material {
             ambient: &color * AMBIENT_FACTOR,
             diffuse: color,
             specular: SPECULAR_COLOR,
-            shine
+            k_a, k_d, k_s,
+            reflection,
+            transmission,
+            refraction_index,
         }
     }
 
@@ -175,8 +190,20 @@ impl Material {
         SHININESS
     }
 
-    pub fn reflection_constant(&self) -> f64 {
-        self.shine
+    pub fn reflection(&self) -> f64 {
+        self.reflection
+    }
+
+    pub fn transmission(&self) -> f64 {
+        self.transmission
+    }
+
+    pub fn refraction_index(&self) -> f64 {
+        self.refraction_index
+    }
+
+    pub fn phong_constants(&self) -> (f64, f64, f64) {
+        (self.k_a, self.k_d, self.k_s)
     }
 }
 
@@ -190,8 +217,10 @@ pub fn phong(
 ) -> Rgb {
     let n = intersect.normal;
 
+    let (k_a, k_d, k_s) = intersect.color.phong_constants();
+
     // Start with the base ambient lighting
-    let ambient = intersect.color.ambient() * AMBIENT_FACTOR;
+    let ambient = intersect.color.ambient() * AMBIENT_FACTOR * k_a;
 
     lights.iter().fold(ambient, |result, &light| {
         // Shadow ray
@@ -205,7 +234,7 @@ pub fn phong(
                 // Calculate diffuse light component
                 let diffuse_dot = dot(s, n);
                 let result = if diffuse_dot > 0.0 {
-                    result + ((intersect.color.diffuse() * &light.color) * diffuse_dot)
+                    result + ((intersect.color.diffuse() * &light.color) * diffuse_dot) * k_d
                 } else {
                     result
                 };
@@ -215,7 +244,7 @@ pub fn phong(
                 let result = if specular_dot > 0.0 {
                     result
                         + ((intersect.color.specular() * &light.color)
-                            * specular_dot.powf(intersect.color.specular_exponent()))
+                            * specular_dot.powf(intersect.color.specular_exponent())) * k_s
                 } else {
                     result
                 };

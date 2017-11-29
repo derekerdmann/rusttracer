@@ -6,6 +6,7 @@ use light::{phong, Light, Material, Rgb};
 use std::any::Any;
 
 const MAX_DEPTH: u8 = 5;
+const ETA_AIR: f64 = 1.0;
 
 // Represents the intersection of a Ray with an object
 pub struct Intersect<'a> {
@@ -77,6 +78,9 @@ pub fn illuminate(
 ) -> Rgb {
     match shape_intersect(&r, shapes, last_shape) {
         Some(intersect) => {
+            let k_r = intersect.color.reflection();
+            let k_t = intersect.color.transmission();
+
             let local = phong(
                 &intersect,
                 shapes,
@@ -84,34 +88,100 @@ pub fn illuminate(
                 (r.direction() - r.origin).normalize(),
             );
 
-            let i = intersect.point;
-            let n = intersect.normal;
-            let k_r = intersect.color.reflection_constant();
+            let reflection = || -> Option<Rgb> {
+                if depth < MAX_DEPTH && k_r > 0.0 {
+                    let i = intersect.point;
+                    let n = intersect.normal;
+                    let r = i - 2.0 * (n * dot(i, n));
 
-            if depth < MAX_DEPTH {
-                if k_r > 0.0 {
-                    let reflection = Ray::new(intersect.point, i - 2.0 * (n * dot(i, n)));
+                    let ray = Ray::new(intersect.point, r);
 
-                    let global_illumination = illuminate(
-                        reflection,
-                        shapes,
-                        lights,
-                        background,
-                        Some(intersect.shape),
-                        depth + 1,
-                    );
-
-                    local + (global_illumination * k_r)
+                    Some(
+                        illuminate(
+                            ray,
+                            shapes,
+                            lights,
+                            background,
+                            Some(intersect.shape),
+                            depth + 1,
+                        ) * k_r,
+                    )
                 } else {
-                    local
+                    None
                 }
-            } else {
-                local
+            };
+
+            let result = match reflection() {
+                None => local,
+                Some(color) => local + color,
+            };
+
+            let transmission = || -> Option<Rgb> {
+                if depth < MAX_DEPTH && k_t > 0.0 {
+                    Some(transmit(r, &intersect, depth, shapes, lights, background) * k_t)
+                } else {
+                    None
+                }
+            };
+
+            match transmission() {
+                None => result,
+                Some(color) => result + color,
             }
         }
         None => background.color.clone(),
     }
 }
+
+fn transmit(
+    r: Ray,
+    intersect: &Intersect,
+    depth: u8,
+    shapes: &Vec<&Shape>,
+    lights: &Vec<&Light>,
+    background: &Background,
+) -> Rgb {
+    let d = r.direction();
+
+    let in_shape = dot(-d, intersect.normal) < 0.0;
+
+    let (n, n_it) = if in_shape {
+        (
+            -intersect.normal,
+            intersect.color.refraction_index() / ETA_AIR,
+        )
+    } else {
+        (
+            intersect.normal,
+            ETA_AIR / intersect.color.refraction_index(),
+        )
+    };
+
+    let discriminant = 1.0 + (n_it.powf(2.0) * (dot(d, n).powf(2.0) - 1.0));
+
+    let t = if discriminant < 0.0 {
+        d - 2.0 * (n * dot(d, n))
+    } else {
+        (d * n_it) + (n * (n_it * dot(d, n) - discriminant.sqrt()))
+    };
+
+    let ray = Ray::new(intersect.point, t);
+
+    //// Handle total internal reflection by using the reflected ray
+    //if( XMVector3Equal( T, TIR_INDICATOR ) ){
+    //    T = XMVector3Reflect( D, N );
+    //}
+
+    illuminate(
+        ray,
+        shapes,
+        lights,
+        background,
+        Some(intersect.shape),
+        depth + 1,
+    )
+}
+
 
 
 #[cfg(test)]
@@ -135,8 +205,8 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Material::new(color1.clone(), 0.0),
-            Material::new(color1.clone(), 0.0),
+            Material::new(color1.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
+            Material::new(color1.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
         );
 
         let f2 = Floor::new(
@@ -144,8 +214,8 @@ mod tests {
             vec3(-1.0, 1.0, 2.0),
             vec3(1.0, -1.0, 2.0),
             vec3(1.0, 1.0, 2.0),
-            Material::new(color2.clone(), 0.0),
-            Material::new(color2.clone(), 0.0),
+            Material::new(color2.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
+            Material::new(color2.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
         );
 
         let shapes: Vec<&Shape> = vec![&f1, &f2];
@@ -169,8 +239,8 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Material::new(color1.clone(), 0.0),
-            Material::new(color1.clone(), 0.0),
+            Material::new(color1.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
+            Material::new(color1.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
         );
 
         let f2 = Floor::new(
@@ -178,8 +248,8 @@ mod tests {
             vec3(-1.0, 1.0, 2.0),
             vec3(1.0, -1.0, 2.0),
             vec3(1.0, 1.0, 2.0),
-            Material::new(color2.clone(), 0.0),
-            Material::new(color2.clone(), 0.0),
+            Material::new(color2.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
+            Material::new(color2.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
         );
 
         let shapes: Vec<&Shape> = vec![&f1, &f2];

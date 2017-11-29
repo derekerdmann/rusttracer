@@ -188,8 +188,8 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Material::new(color.clone(), 0.0),
-            Material::new(color.clone(), 0.0),
+            Material::new(color.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
+            Material::new(color.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
         );
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
@@ -220,8 +220,8 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Material::new(color.clone(), 0.0),
-            Material::new(color.clone(), 0.0),
+            Material::new(color.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
+            Material::new(color.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
         );
 
         let floor = floor.translate(vec3(1.0, 2.0, 3.0));
@@ -257,8 +257,8 @@ mod tests {
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
-            Material::new(color.clone(), 0.0),
-            Material::new(color.clone(), 0.0),
+            Material::new(color.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
+            Material::new(color.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
         );
 
         let floor = floor.rotate_x(-90.0);
