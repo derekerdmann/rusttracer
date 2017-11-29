@@ -14,7 +14,7 @@ const SPECULAR_COLOR: Rgb = Rgb {
         data: [255, 255, 255],
     },
 };
-const SHININESS: f64 = 16.0;
+const SHININESS: f64 = 20.0;
 
 
 // Wrapper for image::Rgb that has overloaded operators

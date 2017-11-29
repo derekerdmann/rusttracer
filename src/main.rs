@@ -28,7 +28,7 @@ fn main() {
     let sphere1 = Sphere::new(
         vec3(-0.87, -0.5, 2.25),
         0.45,
-        Material::new(Rgb::new([61, 161, 1]), (0.15, 0.25, 1.0), 0.99, 0.0, 0.0),
+        Material::new(Rgb::new([179, 179, 179]), (0.15, 0.25, 1.0), 0.75, 0.0, 0.0),
     );
 
     let sphere2 = Sphere::new(

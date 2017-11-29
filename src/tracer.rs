@@ -95,7 +95,7 @@ pub fn illuminate(
             };
 
             let transmission = if depth < MAX_DEPTH && k_t > 0.0 {
-                Some(transmit(r, &intersect, depth, shapes, lights, background) * k_t)
+                Some(transmit(r.direction(), &intersect, depth, shapes, lights, background) * k_t)
             } else {
                 None
             };
@@ -134,15 +134,13 @@ fn reflect(
 }
 
 fn transmit(
-    r: Ray,
+    d: Vector3<f64>,
     intersect: &Intersect,
     depth: u8,
     shapes: &Vec<&Shape>,
     lights: &Vec<&Light>,
     background: &Background,
 ) -> Rgb {
-    let d = r.direction();
-
     let in_shape = dot(-d, intersect.normal) < 0.0;
 
     let (n, n_it) = if in_shape {
@@ -158,12 +156,12 @@ fn transmit(
     };
 
     // Negative discriminant indicates total internal reflection
-    let discriminant = 1.0 + (n_it.powf(2.0) * (dot(d, n).powf(2.0) - 1.0));
+    let discriminant = 1.0 + (n_it * n_it * (dot(-d, n) * dot(-d, n) - 1.0));
 
     let t = if discriminant < 0.0 {
         d - 2.0 * (n * dot(d, n))
     } else {
-        (d * n_it) + (n * (n_it * dot(d, n) - discriminant.sqrt()))
+        (d * n_it) + (n * (n_it * dot(-d, n) - discriminant.sqrt()))
     };
 
     let ray = Ray::new(intersect.point, t);
