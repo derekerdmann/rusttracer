@@ -141,6 +141,18 @@ fn transmit(
     lights: &Vec<&Light>,
     background: &Background,
 ) -> Rgb {
+    illuminate(
+        transmission_ray(d, intersect),
+        shapes,
+        lights,
+        background,
+        Some(intersect.shape),
+        depth + 1,
+    )
+}
+
+// Calculates the ray transmitted through an object
+pub fn transmission_ray(d: Vector3<f64>, intersect: &Intersect) -> Ray {
     let in_shape = dot(-d, intersect.normal) < 0.0;
 
     let (n, n_it) = if in_shape {
@@ -164,16 +176,7 @@ fn transmit(
         (d * n_it) + (n * (n_it * dot(-d, n) - discriminant.sqrt()))
     };
 
-    let ray = Ray::new(intersect.point, t);
-
-    illuminate(
-        ray,
-        shapes,
-        lights,
-        background,
-        Some(intersect.shape),
-        depth + 1,
-    )
+    Ray::new(intersect.point, t)
 }
 
 

@@ -3,7 +3,7 @@ extern crate image;
 use cgmath::{dot, InnerSpace, Vector3};
 use tracer::{Intersect, Shape};
 use ray::Ray;
-use tracer::shape_intersect;
+use tracer::{shape_intersect, transmission_ray};
 use std::{cmp, u8};
 use image::Pixel;
 use std::ops::{Add, Mul};
@@ -15,6 +15,7 @@ const SPECULAR_COLOR: Rgb = Rgb {
     },
 };
 const SHININESS: f64 = 20.0;
+const MAX_SHADOW_DEPTH: u8 = 4;
 
 
 // Wrapper for image::Rgb that has overloaded operators
@@ -161,13 +162,21 @@ pub struct Material {
 }
 
 impl Material {
-    pub fn new(color: Rgb, phong_constants: (f64, f64, f64), reflection: f64, transmission: f64, refraction_index: f64) -> Material {
+    pub fn new(
+        color: Rgb,
+        phong_constants: (f64, f64, f64),
+        reflection: f64,
+        transmission: f64,
+        refraction_index: f64,
+    ) -> Material {
         let (k_a, k_d, k_s) = phong_constants;
         Material {
             ambient: &color * AMBIENT_FACTOR,
             diffuse: color,
             specular: SPECULAR_COLOR,
-            k_a, k_d, k_s,
+            k_a,
+            k_d,
+            k_s,
             reflection,
             transmission,
             refraction_index,
@@ -229,31 +238,77 @@ pub fn phong(
         // Reflected vector
         let r = (s - 2.0 * (dot(s, n) / n.magnitude().powi(2)) * n).normalize();
 
-        match shape_intersect(&Ray::new(intersect.point, s), shapes, Some(intersect.shape)) {
-            None => {
-                // Calculate diffuse light component
-                let diffuse_dot = dot(s, n);
-                let result = if diffuse_dot > 0.0 {
-                    result + ((intersect.color.diffuse() * &light.color) * diffuse_dot) * k_d
-                } else {
-                    result
-                };
+        // Calculate diffuse light component
+        let diffuse_dot = dot(s, n);
+        let diffuse = if diffuse_dot > 0.0 {
+            Some((intersect.color.diffuse() * &light.color) * diffuse_dot * k_d)
+        } else {
+            None
+        };
 
-                // Calculate the specular component
-                let specular_dot = dot(r, v);
-                let result = if specular_dot > 0.0 {
-                    result
-                        + ((intersect.color.specular() * &light.color)
-                            * specular_dot.powf(intersect.color.specular_exponent())) * k_s
-                } else {
-                    result
-                };
+        // Calculate the specular component
+        let specular_dot = dot(r, v);
+        let specular = if specular_dot > 0.0 {
+            Some(
+                ((intersect.color.specular() * &light.color)
+                    * specular_dot.powf(intersect.color.specular_exponent())) * k_s,
+            )
+        } else {
+            None
+        };
 
-                result
-            }
-            Some(_) => result,
-        }
+        let color = [diffuse, specular]
+            .to_vec()
+            .into_iter()
+            .filter_map(|c| c)
+            .fold(result, |result, color| result + color);
+
+        color * trace_shadow(intersect.point, intersect.shape, shapes, light, 1)
     })
+}
+
+// Calculates the amount to dim based on transmitted shadows
+fn trace_shadow(
+    point: Vector3<f64>,
+    shape: &Shape,
+    shapes: &Vec<&Shape>,
+    light: &Light,
+    depth: u8,
+) -> f64 {
+    let s = (light.position - point).normalize();
+
+    match shape_intersect(&Ray::new(point, s), shapes, Some(shape)) {
+        // Nothing blocking, use full value
+        None => 1.0,
+
+        // If a shape is in the way, check transmission before determining shadow
+        Some(blocking) => {
+            let k_t = blocking.color.transmission();
+
+            if k_t > 0.0 {
+                let entry_v = (light.position - blocking.point).normalize();
+                let transmission = transmission_ray(entry_v, &blocking);
+
+                // We were transmitting through the shape, so there should
+                // definitely be an exit point
+                let exit = blocking.shape.intersect(&transmission).unwrap();
+
+                // Combine the ambient, diffuse, and specular components but
+                // reduce the intensity by the blocking shape's transmission
+                // constant
+
+                if depth < MAX_SHADOW_DEPTH {
+                    k_t * trace_shadow(exit.point, blocking.shape, shapes, light, depth + 1)
+                } else {
+                    k_t
+                }
+
+            // Fully opaque object
+            } else {
+                0.0
+            }
+        }
+    }
 }
 
 #[cfg(test)]

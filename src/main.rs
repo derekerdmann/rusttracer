@@ -51,7 +51,7 @@ fn main() {
         Material::new(Rgb::new([255, 0, 0]), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
         Material::new(Rgb::new([255, 255, 0]), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
     );
-    let floor = floor.rotate_x(75.0);
+    let floor = floor.rotate_x(65.0);
     let floor = floor.translate(vec3(-1.0, -1.25, 2.0));
 
     let shapes: Vec<&Shape> = vec![&sphere1, &sphere2, &floor];
