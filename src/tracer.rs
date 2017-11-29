@@ -88,49 +88,49 @@ pub fn illuminate(
                 (r.direction() - r.origin).normalize(),
             );
 
-            let reflection = || -> Option<Rgb> {
-                if depth < MAX_DEPTH && k_r > 0.0 {
-                    let i = intersect.point;
-                    let n = intersect.normal;
-                    let r = i - 2.0 * (n * dot(i, n));
-
-                    let ray = Ray::new(intersect.point, r);
-
-                    Some(
-                        illuminate(
-                            ray,
-                            shapes,
-                            lights,
-                            background,
-                            Some(intersect.shape),
-                            depth + 1,
-                        ) * k_r,
-                    )
-                } else {
-                    None
-                }
+            let reflection = if depth < MAX_DEPTH && k_r > 0.0 {
+                Some(reflect(&intersect, depth, shapes, lights, background) * k_r)
+            } else {
+                None
             };
 
-            let result = match reflection() {
-                None => local,
-                Some(color) => local + color,
+            let transmission = if depth < MAX_DEPTH && k_t > 0.0 {
+                Some(transmit(r, &intersect, depth, shapes, lights, background) * k_t)
+            } else {
+                None
             };
 
-            let transmission = || -> Option<Rgb> {
-                if depth < MAX_DEPTH && k_t > 0.0 {
-                    Some(transmit(r, &intersect, depth, shapes, lights, background) * k_t)
-                } else {
-                    None
-                }
-            };
-
-            match transmission() {
-                None => result,
-                Some(color) => result + color,
-            }
+            [reflection, transmission]
+                .to_vec()
+                .into_iter()
+                .filter_map(|c| c)
+                .fold(local, |result, color| result + color)
         }
         None => background.color.clone(),
     }
+}
+
+fn reflect(
+    intersect: &Intersect,
+    depth: u8,
+    shapes: &Vec<&Shape>,
+    lights: &Vec<&Light>,
+    background: &Background,
+) -> Rgb {
+    let i = intersect.point;
+    let n = intersect.normal;
+    let r = i - 2.0 * (n * dot(i, n));
+
+    let ray = Ray::new(intersect.point, r);
+
+    illuminate(
+        ray,
+        shapes,
+        lights,
+        background,
+        Some(intersect.shape),
+        depth + 1,
+    )
 }
 
 fn transmit(
@@ -157,6 +157,7 @@ fn transmit(
         )
     };
 
+    // Negative discriminant indicates total internal reflection
     let discriminant = 1.0 + (n_it.powf(2.0) * (dot(d, n).powf(2.0) - 1.0));
 
     let t = if discriminant < 0.0 {
@@ -166,11 +167,6 @@ fn transmit(
     };
 
     let ray = Ray::new(intersect.point, t);
-
-    //// Handle total internal reflection by using the reflected ray
-    //if( XMVector3Equal( T, TIR_INDICATOR ) ){
-    //    T = XMVector3Reflect( D, N );
-    //}
 
     illuminate(
         ray,
