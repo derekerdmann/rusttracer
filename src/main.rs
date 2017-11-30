@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate cgmath;
+extern crate chan;
 extern crate image;
 extern crate piston_window;
 
@@ -9,9 +10,9 @@ mod floor;
 mod ray;
 mod light;
 
+use std::sync::Arc;
 use std::thread;
 use std::sync::mpsc;
-use std::sync::mpsc::TryRecvError;
 use image::ConvertBuffer;
 use cgmath::vec3;
 use tracer::{Background, Shape};
@@ -24,9 +25,9 @@ const IMAGE_PLANE: f64 = 0.5;
 
 
 fn main() {
-    let background = Background {
+    let background = Arc::new(Background {
         color: Rgb::new([0, 175, 215]),
-    };
+    });
 
     let sphere1 = Sphere::new(
         vec3(-0.87, -0.5, 2.25),
@@ -57,14 +58,15 @@ fn main() {
     let floor = floor.rotate_x(65.0);
     let floor = floor.translate(vec3(-1.0, -1.25, 2.0));
 
-    let shapes: Vec<Box<Shape>> = vec![Box::new(sphere1), Box::new(sphere2), Box::new(floor)];
+    let shapes: Arc<Vec<Box<Shape>>> =
+        Arc::new(vec![Box::new(sphere1), Box::new(sphere2), Box::new(floor)]);
 
     let light1 = Light {
         position: vec3(2.0, 3.0, -4.0),
         color: Rgb::new([255, 255, 255]),
     };
 
-    let lights: Vec<Light> = vec![light1];
+    let lights: Arc<Vec<Light>> = Arc::new(vec![light1]);
 
     // Create the raw image buffer
     let mut image = image::RgbImage::from_pixel(640, 640, image::Rgb([255, 0, 0]));
@@ -75,12 +77,12 @@ fn main() {
     let dy = 1.0 / image.height() as f64;
 
     // Set up computation channel
-    let (compute_tx, compute_rx) = mpsc::channel();
+    let (compute_tx, compute_rx) = chan::async();
 
-    // Set up color calculation channel
+    // Set up color result channel
     let (color_tx, color_rx) = mpsc::channel();
 
-    // Trace through the scene
+    // Queue up all the pixels whose color needs to be calculated
     for (real_xpixel, real_ypixel, _) in image.enumerate_pixels() {
         // enumerate_pixels_mut() iterates from top to bottom and left to right,
         // rather than bottom to top, left to right. Rather than reworking the
@@ -94,24 +96,34 @@ fn main() {
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(x, y, IMAGE_PLANE));
 
-        compute_tx.send((real_xpixel, real_ypixel, r)).unwrap();
+        compute_tx.send((real_xpixel, real_ypixel, r));
     }
+    drop(compute_tx);
 
     // Calculate colors
-    let worker = thread::spawn(move || loop {
-        match compute_rx.try_recv() {
-            Ok((xpixel, ypixel, r)) => {
-                let color = tracer::illuminate(r, &shapes, &lights, &background, None, 1).color;
-                color_tx.send((xpixel, ypixel, color)).unwrap();
-            }
-            Err(e) => match e {
-                TryRecvError::Empty => break,
-                TryRecvError::Disconnected => panic!("Compute channel disconnected!"),
-            },
-        }
-    });
+    let mut workers = vec![];
+    for _ in 0..4 {
+        let rx = compute_rx.clone();
+        let tx = color_tx.clone();
 
-    worker.join().unwrap();
+        let s = Arc::clone(&shapes);
+        let l = Arc::clone(&lights);
+        let bg = Arc::clone(&background);
+        workers.push(thread::spawn(move || loop {
+            match rx.recv() {
+                Some((xpixel, ypixel, r)) => {
+                    let color = tracer::illuminate(r, &s, &l, &bg, None, 1).color;
+                    tx.send((xpixel, ypixel, color)).unwrap();
+                }
+                None => break,
+            }
+        }));
+    }
+
+    // Wait for worker threads to finish
+    for worker in workers {
+        worker.join().unwrap();
+    }
 
     // Render pixels
     loop {
