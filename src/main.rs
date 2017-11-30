@@ -9,6 +9,7 @@ mod floor;
 mod ray;
 mod light;
 
+use std::thread;
 use std::sync::mpsc;
 use std::sync::mpsc::TryRecvError;
 use image::ConvertBuffer;
@@ -56,14 +57,14 @@ fn main() {
     let floor = floor.rotate_x(65.0);
     let floor = floor.translate(vec3(-1.0, -1.25, 2.0));
 
-    let shapes: Vec<&Shape> = vec![&sphere1, &sphere2, &floor];
+    let shapes: Vec<Box<Shape>> = vec![Box::new(sphere1), Box::new(sphere2), Box::new(floor)];
 
     let light1 = Light {
         position: vec3(2.0, 3.0, -4.0),
         color: Rgb::new([255, 255, 255]),
     };
 
-    let lights: Vec<&Light> = vec![&light1];
+    let lights: Vec<Light> = vec![light1];
 
     // Create the raw image buffer
     let mut image = image::RgbImage::from_pixel(640, 640, image::Rgb([255, 0, 0]));
@@ -97,33 +98,28 @@ fn main() {
     }
 
     // Calculate colors
-    loop {
+    let worker = thread::spawn(move || loop {
         match compute_rx.try_recv() {
             Ok((xpixel, ypixel, r)) => {
                 let color = tracer::illuminate(r, &shapes, &lights, &background, None, 1).color;
                 color_tx.send((xpixel, ypixel, color)).unwrap();
-            },
-            Err(e) => {
-                match e {
-                    TryRecvError::Empty => break,
-                    TryRecvError::Disconnected => panic!("Compute channel disconnected!"),
-                }
+            }
+            Err(e) => match e {
+                TryRecvError::Empty => break,
+                TryRecvError::Disconnected => panic!("Compute channel disconnected!"),
             },
         }
-    }
+    });
+
+    worker.join().unwrap();
 
     // Render pixels
     loop {
         match color_rx.try_recv() {
             Ok((xpixel, ypixel, color)) => {
                 *image.get_pixel_mut(xpixel, ypixel) = color;
-            },
-            Err(e) => {
-                match e {
-                    TryRecvError::Empty => break,
-                    TryRecvError::Disconnected => panic!("Color channel disconnected!"),
-                }
-            },
+            }
+            Err(_) => break,
         }
     }
 

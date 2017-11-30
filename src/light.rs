@@ -220,8 +220,8 @@ impl Material {
 // Performs phong shading in a scene
 pub fn phong(
     intersect: &Intersect,
-    shapes: &Vec<&Shape>,
-    lights: &Vec<&Light>,
+    shapes: &Vec<Box<Shape>>,
+    lights: &Vec<Light>,
     v: Vector3<f64>,
 ) -> Rgb {
     let n = intersect.normal;
@@ -231,7 +231,7 @@ pub fn phong(
     // Start with the base ambient lighting
     let ambient = intersect.color.ambient() * AMBIENT_FACTOR * k_a;
 
-    lights.iter().fold(ambient, |result, &light| {
+    lights.iter().fold(ambient, |result, ref light| {
         // Shadow ray
         let s = (light.position - intersect.point).normalize();
 
@@ -263,7 +263,7 @@ pub fn phong(
             .filter_map(|c| c)
             .fold(result, |result, color| result + color);
 
-        color * trace_shadow(intersect.point, intersect.shape, shapes, light, 1)
+        color * trace_shadow(intersect.point, intersect.shape, shapes, &light, 1)
     })
 }
 
@@ -271,7 +271,7 @@ pub fn phong(
 fn trace_shadow(
     point: Vector3<f64>,
     shape: &Shape,
-    shapes: &Vec<&Shape>,
+    shapes: &Vec<Box<Shape>>,
     light: &Light,
     depth: u8,
 ) -> f64 {

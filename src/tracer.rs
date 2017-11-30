@@ -4,6 +4,8 @@ use cgmath::{dot, InnerSpace, Vector3};
 use ray::Ray;
 use light::{phong, Light, Material, Rgb};
 use std::any::Any;
+use std::borrow::Borrow;
+
 
 const MAX_DEPTH: u8 = 5;
 const ETA_AIR: f64 = 1.0;
@@ -27,7 +29,7 @@ pub struct Intersect<'a> {
 }
 
 // Trait for objects that can be placed in the raytracer scene
-pub trait Shape {
+pub trait Shape: Send + Sync {
     // If the Ray intersects the shape, returns the distance from the Ray's
     // origin and the color at that point.
     fn intersect(&self, ray: &Ray) -> Option<Intersect>;
@@ -53,13 +55,18 @@ pub struct Background {
 // front of the starting point.
 pub fn shape_intersect<'a>(
     r: &Ray,
-    shapes: &Vec<&'a Shape>,
+    shapes: &'a Vec<Box<Shape>>,
     exclude: Option<&Shape>,
 ) -> Option<Intersect<'a>> {
     shapes
         .iter()
-        .filter(|&shape| exclude.map_or(true, |e| &e != shape))
-        .filter_map(|&shape| shape.intersect(&r))
+        .filter(|&shape| {
+            exclude.map_or(true, |e| {
+                let s: &'a Shape = shape.borrow();
+                &e != &s
+            })
+        })
+        .filter_map(|shape| shape.intersect(&r))
         .filter(|intersect| intersect.distance >= 0.0)
         .min_by(|first, second| {
             first.distance.partial_cmp(&second.distance).unwrap()
@@ -70,8 +77,8 @@ pub fn shape_intersect<'a>(
 // objects it intersects and the final output color
 pub fn illuminate(
     r: Ray,
-    shapes: &Vec<&Shape>,
-    lights: &Vec<&Light>,
+    shapes: &Vec<Box<Shape>>,
+    lights: &Vec<Light>,
     background: &Background,
     last_shape: Option<&Shape>,
     depth: u8,
@@ -113,8 +120,8 @@ pub fn illuminate(
 fn reflect(
     intersect: &Intersect,
     depth: u8,
-    shapes: &Vec<&Shape>,
-    lights: &Vec<&Light>,
+    shapes: &Vec<Box<Shape>>,
+    lights: &Vec<Light>,
     background: &Background,
 ) -> Rgb {
     let i = intersect.point;
@@ -137,8 +144,8 @@ fn transmit(
     d: Vector3<f64>,
     intersect: &Intersect,
     depth: u8,
-    shapes: &Vec<&Shape>,
-    lights: &Vec<&Light>,
+    shapes: &Vec<Box<Shape>>,
+    lights: &Vec<Light>,
     background: &Background,
 ) -> Rgb {
     illuminate(
@@ -190,6 +197,7 @@ mod tests {
     use floor::Floor;
     use light::{Material, Rgb};
     use super::shape_intersect;
+    use std::borrow::Borrow;
 
     // Tests that the closest shape is selected
     #[test]
@@ -215,7 +223,7 @@ mod tests {
             Material::new(color2.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
         );
 
-        let shapes: Vec<&Shape> = vec![&f1, &f2];
+        let shapes: Vec<Box<Shape>> = vec![Box::new(f1), Box::new(f2)];
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
 
@@ -231,39 +239,46 @@ mod tests {
         let color1 = Rgb::new([255, 0, 0]);
         let color2 = Rgb::new([0, 255, 0]);
 
-        let f1 = Floor::new(
+        let f1: Box<Shape> = Box::new(Floor::new(
             vec3(-1.0, -1.0, 1.0),
             vec3(-1.0, 1.0, 1.0),
             vec3(1.0, -1.0, 1.0),
             vec3(1.0, 1.0, 1.0),
             Material::new(color1.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
             Material::new(color1.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
-        );
+        ));
 
-        let f2 = Floor::new(
+        let f2: Box<Shape> = Box::new(Floor::new(
             vec3(-1.0, -1.0, 2.0),
             vec3(-1.0, 1.0, 2.0),
             vec3(1.0, -1.0, 2.0),
             vec3(1.0, 1.0, 2.0),
             Material::new(color2.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
             Material::new(color2.clone(), (1.0, 1.0, 1.0), 0.0, 0.0, 0.0),
-        );
+        ));
 
-        let shapes: Vec<&Shape> = vec![&f1, &f2];
+        let mut shapes: Vec<Box<Shape>> = vec![f1, f2];
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
 
-        // Exclude a shape that already isn't closest
-        let intersect = shape_intersect(&r, &shapes, Some(&f2)).expect("f1 should intersect");
-        assert_ulps_eq!(1.0, intersect.distance);
+        {
+            let s2: &Shape = shapes[1].borrow();
+            // Exclude a shape that already isn't closest
+            let intersect = shape_intersect(&r, &shapes, Some(s2)).expect("f1 should intersect");
+            assert_ulps_eq!(1.0, intersect.distance);
+        }
 
-        // Exclude the closest shape
-        let intersect = shape_intersect(&r, &shapes, Some(&f1)).expect("f2 should intersect");
-        assert_ulps_eq!(2.0, intersect.distance);
+        {
+            let s1: &Shape = shapes[0].borrow();
+            // Exclude the closest shape
+            let intersect = shape_intersect(&r, &shapes, Some(s1)).expect("f2 should intersect");
+            assert_ulps_eq!(2.0, intersect.distance);
+        }
 
         // Exclude the only shape
-        let shapes: Vec<&Shape> = vec![&f1];
-        let intersect = shape_intersect(&r, &shapes, Some(&f1));
+        shapes.remove(1);
+        let s1: &Shape = shapes[0].borrow();
+        let intersect = shape_intersect(&r, &shapes, Some(s1));
         assert!(intersect.is_none());
     }
 
