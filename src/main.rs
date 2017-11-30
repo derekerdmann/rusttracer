@@ -73,8 +73,11 @@ fn main() {
     let dx = 1.0 / image.width() as f64;
     let dy = 1.0 / image.height() as f64;
 
-    // Set up computation channels
+    // Set up computation channel
     let (compute_tx, compute_rx) = mpsc::channel();
+
+    // Set up color calculation channel
+    let (color_tx, color_rx) = mpsc::channel();
 
     // Trace through the scene
     for (real_xpixel, real_ypixel, _) in image.enumerate_pixels() {
@@ -93,18 +96,32 @@ fn main() {
         compute_tx.send((real_xpixel, real_ypixel, r)).unwrap();
     }
 
+    // Calculate colors
     loop {
-        let result = compute_rx.try_recv();
-
-        match result {
+        match compute_rx.try_recv() {
             Ok((xpixel, ypixel, r)) => {
-                let pixel = image.get_pixel_mut(xpixel, ypixel);
-                *pixel = tracer::illuminate(r, &shapes, &lights, &background, None, 1).color;
+                let color = tracer::illuminate(r, &shapes, &lights, &background, None, 1).color;
+                color_tx.send((xpixel, ypixel, color)).unwrap();
             },
             Err(e) => {
                 match e {
                     TryRecvError::Empty => break,
-                    TryRecvError::Disconnected => panic!("Channel disconnected!"),
+                    TryRecvError::Disconnected => panic!("Compute channel disconnected!"),
+                }
+            },
+        }
+    }
+
+    // Render pixels
+    loop {
+        match color_rx.try_recv() {
+            Ok((xpixel, ypixel, color)) => {
+                *image.get_pixel_mut(xpixel, ypixel) = color;
+            },
+            Err(e) => {
+                match e {
+                    TryRecvError::Empty => break,
+                    TryRecvError::Disconnected => panic!("Color channel disconnected!"),
                 }
             },
         }
