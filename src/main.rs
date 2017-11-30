@@ -9,6 +9,8 @@ mod floor;
 mod ray;
 mod light;
 
+use std::sync::mpsc;
+use std::sync::mpsc::TryRecvError;
 use image::ConvertBuffer;
 use cgmath::vec3;
 use tracer::{Background, Shape};
@@ -71,20 +73,41 @@ fn main() {
     let dx = 1.0 / image.width() as f64;
     let dy = 1.0 / image.height() as f64;
 
+    // Set up computation channels
+    let (compute_tx, compute_rx) = mpsc::channel();
+
     // Trace through the scene
-    for (xpixel, ypixel, pixel) in image.enumerate_pixels_mut() {
+    for (real_xpixel, real_ypixel, _) in image.enumerate_pixels() {
         // enumerate_pixels_mut() iterates from top to bottom and left to right,
         // rather than bottom to top, left to right. Rather than reworking the
         // ray calculations, just figure out the pixel coordinates we actually
         // want to calculate.
-        let ypixel = height - ypixel;
+        let xpixel = real_xpixel;
+        let ypixel = height - real_ypixel;
 
         let x = -0.5 + (xpixel as f64) * dx;
         let y = -0.5 + (ypixel as f64) * dy;
 
         let r = Ray::new(vec3(0.0, 0.0, 0.0), vec3(x, y, IMAGE_PLANE));
 
-        *pixel = tracer::illuminate(r, &shapes, &lights, &background, None, 1).color;
+        compute_tx.send((real_xpixel, real_ypixel, r)).unwrap();
+    }
+
+    loop {
+        let result = compute_rx.try_recv();
+
+        match result {
+            Ok((xpixel, ypixel, r)) => {
+                let pixel = image.get_pixel_mut(xpixel, ypixel);
+                *pixel = tracer::illuminate(r, &shapes, &lights, &background, None, 1).color;
+            },
+            Err(e) => {
+                match e {
+                    TryRecvError::Empty => break,
+                    TryRecvError::Disconnected => panic!("Channel disconnected!"),
+                }
+            },
+        }
     }
 
     // Set up the window for rendering
