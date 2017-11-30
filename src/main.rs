@@ -3,6 +3,7 @@ extern crate cgmath;
 extern crate chan;
 extern crate image;
 extern crate piston_window;
+extern crate time;
 
 mod tracer;
 mod sphere;
@@ -82,6 +83,9 @@ fn main() {
     // Set up color result channel
     let (color_tx, color_rx) = mpsc::channel();
 
+    // Measure render speed
+    let start = time::precise_time_ns();
+
     // Queue up all the pixels whose color needs to be calculated
     for (real_xpixel, real_ypixel, _) in image.enumerate_pixels() {
         // enumerate_pixels_mut() iterates from top to bottom and left to right,
@@ -120,10 +124,14 @@ fn main() {
         }));
     }
 
+    let num_workers = workers.len();
+
     // Wait for worker threads to finish
     for worker in workers {
         worker.join().unwrap();
     }
+
+    let compute = time::precise_time_ns();
 
     // Render pixels
     loop {
@@ -134,6 +142,8 @@ fn main() {
             Err(_) => break,
         }
     }
+
+    let render = time::precise_time_ns();
 
     // Set up the window for rendering
     let mut window: piston_window::PistonWindow =
@@ -148,6 +158,13 @@ fn main() {
         &image.convert(),
         &piston_window::TextureSettings::new(),
     ).unwrap();
+
+    let display = time::precise_time_ns();
+
+    println!("Number of threads: {}", num_workers);
+    println!("Time to compute pixels: {} ms", (compute - start) / 1000000);
+    println!("Time to render pixels: {} ms", (render - compute) / 1000000);
+    println!("Time to display result: {} ms", (display - render) / 1000000);
 
     // Event loop
     while let Some(e) = window.next() {
