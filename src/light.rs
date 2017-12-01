@@ -238,10 +238,13 @@ pub fn phong(
         // Reflected vector
         let r = (s - 2.0 * (dot(s, n) / n.magnitude().powi(2)) * n).normalize();
 
+        // Calculate the color including shadow transmission
+        let light_color = trace_shadow(intersect.point, intersect.shape, shapes, &light, 1);
+
         // Calculate diffuse light component
         let diffuse_dot = dot(s, n);
         let diffuse = if diffuse_dot > 0.0 {
-            Some((intersect.color.diffuse() * &light.color) * diffuse_dot * k_d)
+            Some((intersect.color.diffuse() * &light_color) * diffuse_dot * k_d)
         } else {
             None
         };
@@ -250,20 +253,18 @@ pub fn phong(
         let specular_dot = dot(r, v);
         let specular = if specular_dot > 0.0 {
             Some(
-                ((intersect.color.specular() * &light.color)
+                ((intersect.color.specular() * &light_color)
                     * specular_dot.powf(intersect.color.specular_exponent())) * k_s,
             )
         } else {
             None
         };
 
-        let color = [diffuse, specular]
+        [diffuse, specular]
             .to_vec()
             .into_iter()
             .filter_map(|c| c)
-            .fold(result, |result, color| result + color);
-
-        color * trace_shadow(intersect.point, intersect.shape, shapes, &light, 1)
+            .fold(result, |result, color| result + color)
     })
 }
 
@@ -274,18 +275,29 @@ fn trace_shadow(
     shapes: &Vec<Box<Shape>>,
     light: &Light,
     depth: u8,
-) -> f64 {
+) -> Rgb {
     let s = (light.position - point).normalize();
 
     match shape_intersect(&Ray::new(point, s), shapes, Some(shape)) {
         // Nothing blocking, use full value
-        None => 1.0,
+        None => &light.color * 1.0,
 
         // If a shape is in the way, check transmission before determining shadow
         Some(blocking) => {
             let k_t = blocking.color.transmission();
+            let (_, k_d, _) = blocking.color.phong_constants();
 
-            if k_t > 0.0 {
+            // Transmission color should only reduce the light color by the
+            // diffuse phong constant for the shape.
+            let color = Rgb {
+                color: blocking
+                    .color
+                    .diffuse()
+                    .color
+                    .map(|channel| u8::MAX - ((u8::MAX - channel) as f64 * k_d) as u8),
+            };
+
+            if k_t > 0.0 && depth < MAX_SHADOW_DEPTH {
                 let entry_v = (light.position - blocking.point).normalize();
                 let transmission = transmission_ray(entry_v, &blocking);
 
@@ -293,19 +305,11 @@ fn trace_shadow(
                 // definitely be an exit point
                 let exit = blocking.shape.intersect(&transmission).unwrap();
 
-                // Combine the ambient, diffuse, and specular components but
-                // reduce the intensity by the blocking shape's transmission
-                // constant
-
-                if depth < MAX_SHADOW_DEPTH {
-                    k_t * trace_shadow(exit.point, blocking.shape, shapes, light, depth + 1)
-                } else {
-                    k_t
-                }
-
-            // Fully opaque object
+                color * trace_shadow(exit.point, blocking.shape, shapes, light, depth + 1) * k_t
+            } else if k_t > 0.0 {
+                color * k_t
             } else {
-                0.0
+                blocking.color.diffuse() * 0.0
             }
         }
     }

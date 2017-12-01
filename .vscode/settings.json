@@ -4,5 +4,6 @@
         "target": true
     },
     "rust.cfg_test": true,
-    "rust-client.channel": "stable"
+    "rust-client.channel": "stable",
+    "debug.allowBreakpointsEverywhere": true
 }
