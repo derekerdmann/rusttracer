@@ -9,6 +9,8 @@ particular ray tracer match the incremental stages from the class, but later
 commits have fixed problems and added features beyond what I'd previously
 built.
 
+![Rendered scene](images/tracer.png)
+
 What can it do?
 ---------------
 Finished:
